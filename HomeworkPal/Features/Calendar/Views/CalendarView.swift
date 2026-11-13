@@ -1,7 +1,6 @@
 import SwiftUI
-import Playgrounds
 
-struct MyView4: View {
+struct CalendarView: View {
     var body: some View {
         Text("Hello, world!")
             .padding()
@@ -9,5 +8,5 @@ struct MyView4: View {
 }
 
 #Preview {
-    MyView()
+    CalendarView()
 }
