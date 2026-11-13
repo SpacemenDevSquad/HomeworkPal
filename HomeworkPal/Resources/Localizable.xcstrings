@@ -1,0 +1,69 @@
+{
+  "sourceLanguage" : "en",
+  "strings" : {
+    "\"%@\" will be checked off your list." : {
+
+    },
+    "Add" : {
+
+    },
+    "Add Assignment" : {
+
+    },
+    "Cancel" : {
+
+    },
+    "Class or Activity" : {
+
+    },
+    "Complete" : {
+
+    },
+    "Due" : {
+
+    },
+    "Hello, world!" : {
+
+    },
+    "Later" : {
+
+    },
+    "Mark as Complete?" : {
+
+    },
+    "Mark complete" : {
+
+    },
+    "Mark incomplete" : {
+
+    },
+    "New Assignment" : {
+
+    },
+    "Nothing Due" : {
+
+    },
+    "Overdue" : {
+
+    },
+    "Tap + to add homework." : {
+
+    },
+    "This Week" : {
+
+    },
+    "Title" : {
+
+    },
+    "Today" : {
+
+    },
+    "Tomorrow" : {
+
+    },
+    "Upcoming" : {
+
+    }
+  },
+  "version" : "1.0"
+}
