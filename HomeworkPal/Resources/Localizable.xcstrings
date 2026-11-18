@@ -1,7 +1,29 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "\"%@\" and its ^[%lld assignment](inflect: true) will be deleted." : {
+      "localizations" : {
+        "en" : {
+          "stringUnit" : {
+            "state" : "new",
+            "value" : "\"%1$@\" and its ^[%2$lld assignment](inflect: true) will be deleted."
+          }
+        }
+      }
+    },
     "\"%@\" will be checked off your list." : {
+
+    },
+    "\"%@\" will be deleted." : {
+
+    },
+    "%lld due" : {
+
+    },
+    "A class or activity with this name already exists." : {
+
+    },
+    "Activities" : {
 
     },
     "Add" : {
@@ -10,19 +32,61 @@
     "Add Assignment" : {
 
     },
+    "Add Class or Activity" : {
+
+    },
+    "Blue" : {
+
+    },
+    "Brown" : {
+
+    },
+    "Busy" : {
+
+    },
+    "Calendar" : {
+
+    },
     "Cancel" : {
 
     },
     "Class or Activity" : {
 
     },
+    "Color" : {
+
+    },
+    "Coming Soon" : {
+
+    },
     "Complete" : {
+
+    },
+    "Completed" : {
+
+    },
+    "Dashboard" : {
+
+    },
+    "Delete" : {
+
+    },
+    "Delete Class?" : {
 
     },
     "Due" : {
 
     },
+    "Green" : {
+
+    },
     "Hello, world!" : {
+
+    },
+    "Hides assignments" : {
+
+    },
+    "Indigo" : {
 
     },
     "Later" : {
@@ -37,16 +101,67 @@
     "Mark incomplete" : {
 
     },
+    "Name" : {
+
+    },
     "New Assignment" : {
+
+    },
+    "New Class" : {
+
+    },
+    "Next Week" : {
+
+    },
+    "No Assignments" : {
+
+    },
+    "No Classes Yet" : {
+
+    },
+    "Nothing due" : {
 
     },
     "Nothing Due" : {
 
     },
+    "Nothing has been added to %@ yet." : {
+
+    },
+    "Orange" : {
+
+    },
     "Overdue" : {
 
     },
+    "Pink" : {
+
+    },
+    "Previous Week" : {
+
+    },
+    "Purple" : {
+
+    },
+    "Red" : {
+
+    },
+    "Settings" : {
+
+    },
+    "Settings aren't available yet." : {
+
+    },
+    "Shows assignments" : {
+
+    },
+    "Tap + to add a class or activity." : {
+
+    },
     "Tap + to add homework." : {
+
+    },
+    "Teal" : {
 
     },
     "This Week" : {
@@ -62,6 +177,9 @@
 
     },
     "Upcoming" : {
+
+    },
+    "Yellow" : {
 
     }
   },

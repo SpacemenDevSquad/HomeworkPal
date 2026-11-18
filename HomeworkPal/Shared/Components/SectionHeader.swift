@@ -4,17 +4,14 @@ struct SectionHeader: View {
     private static let badgeHorizontalPadding: CGFloat = 8
     private static let badgeVerticalPadding: CGFloat = 2
 
-    let bucket: DueBucket
+    let title: LocalizedStringResource
     let count: Int
-
-    // Overdue gets the orange accent fill so it stands out; other buckets use the neutral surface.
-    private var badgeFill: Color {
-        bucket == .overdue ? Theme.accent : Theme.surface
-    }
+    /// Fills the count badge with the orange accent to draw attention, such as for overdue work.
+    var isEmphasized = false
 
     var body: some View {
         HStack(spacing: 8) {
-            Text(bucket.title)
+            Text(title)
                 .font(.headline)
                 .foregroundStyle(Theme.primaryText)
             Text(count, format: .number)
@@ -22,7 +19,7 @@ struct SectionHeader: View {
                 .foregroundStyle(Theme.primaryText)
                 .padding(.horizontal, Self.badgeHorizontalPadding)
                 .padding(.vertical, Self.badgeVerticalPadding)
-                .background(badgeFill, in: .capsule)
+                .background(isEmphasized ? Theme.accent : Theme.surface, in: .capsule)
             Spacer()
         }
         .padding(.vertical, 8)
@@ -32,8 +29,8 @@ struct SectionHeader: View {
 
 #Preview {
     VStack {
-        SectionHeader(bucket: .overdue, count: 1)
-        SectionHeader(bucket: .today, count: 2)
+        SectionHeader(title: "Overdue", count: 1, isEmphasized: true)
+        SectionHeader(title: "Today", count: 2)
     }
     .padding()
     .background(Theme.background)

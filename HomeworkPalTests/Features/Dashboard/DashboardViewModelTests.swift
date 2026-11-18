@@ -7,20 +7,24 @@ struct DashboardViewModelTests {
     private let overdueAssignment = Assignment(title: "Overdue essay", course: .english, dueDate: .now.addingTimeInterval(-3_600))
     private let laterAssignment = Assignment(title: "Final project", course: .biology, dueDate: .now.addingTimeInterval(30 * 86_400))
 
+    private func makeViewModel(assignments: [Assignment]) -> DashboardViewModel {
+        DashboardViewModel(planner: PlannerViewModel(courses: Course.sampleData, assignments: assignments))
+    }
+
     @Test func sectionsAreOrderedByUrgency() {
-        let viewModel = DashboardViewModel(assignments: [laterAssignment, overdueAssignment], courses: Course.sampleData)
+        let viewModel = makeViewModel(assignments: [laterAssignment, overdueAssignment])
 
         #expect(viewModel.sections.map(\.bucket) == [.overdue, .later])
     }
 
     @Test func emptyAssignmentsProduceEmptyState() {
-        let viewModel = DashboardViewModel(assignments: [], courses: Course.sampleData)
+        let viewModel = makeViewModel(assignments: [])
 
         #expect(viewModel.isEmpty)
     }
 
     @Test func requestCompletionSetsPendingAssignmentWithoutCompleting() {
-        let viewModel = DashboardViewModel(assignments: [overdueAssignment], courses: Course.sampleData)
+        let viewModel = makeViewModel(assignments: [overdueAssignment])
 
         viewModel.requestCompletion(for: overdueAssignment)
 
@@ -29,7 +33,7 @@ struct DashboardViewModelTests {
     }
 
     @Test func markCompleteRemovesAssignmentFromSections() {
-        let viewModel = DashboardViewModel(assignments: [overdueAssignment, laterAssignment], courses: Course.sampleData)
+        let viewModel = makeViewModel(assignments: [overdueAssignment, laterAssignment])
 
         viewModel.markComplete(overdueAssignment)
 
@@ -37,7 +41,7 @@ struct DashboardViewModelTests {
     }
 
     @Test func addAssignmentAppearsInSections() {
-        let viewModel = DashboardViewModel(assignments: [], courses: Course.sampleData)
+        let viewModel = makeViewModel(assignments: [])
 
         viewModel.addAssignment(laterAssignment)
 
@@ -45,18 +49,19 @@ struct DashboardViewModelTests {
     }
 
     @Test func startAddingAssignmentPresentsSheet() {
-        let viewModel = DashboardViewModel(assignments: [], courses: Course.sampleData)
+        let viewModel = makeViewModel(assignments: [])
 
         viewModel.startAddingAssignment()
 
         #expect(viewModel.isAddingAssignment)
     }
 
-    @Test func showCalendarPresentsCalendar() {
-        let viewModel = DashboardViewModel(assignments: [], courses: Course.sampleData)
+    @Test func changesFromAnotherTabAppearInSections() {
+        let planner = PlannerViewModel(courses: Course.sampleData, assignments: [overdueAssignment])
+        let viewModel = DashboardViewModel(planner: planner)
 
-        viewModel.showCalendar()
+        planner.markComplete(overdueAssignment)
 
-        #expect(viewModel.isShowingCalendar)
+        #expect(viewModel.isEmpty)
     }
 }

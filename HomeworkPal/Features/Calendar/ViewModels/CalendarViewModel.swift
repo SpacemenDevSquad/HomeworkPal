@@ -5,7 +5,6 @@ import Foundation
 final class CalendarViewModel: ObservableObject {
     private static let daysInWeek = 7
 
-    @Published private(set) var assignments: [Assignment]
     /// The first day of the week being shown, respecting the locale's first weekday.
     @Published private(set) var weekStart: Date
     /// The day whose assignments are expanded. Only one day is expanded at a time.
@@ -14,16 +13,17 @@ final class CalendarViewModel: ObservableObject {
     /// The assignment awaiting confirmation before it's checked off. Drives the confirmation alert.
     @Published var pendingCompletion: Assignment?
 
+    private let planner: PlannerViewModel
     private let calendar: Calendar
     /// Read on demand rather than stored, so "today" stays correct if the app stays open past midnight.
     private let currentDate: () -> Date
 
     init(
-        assignments: [Assignment] = Assignment.sampleData,
+        planner: PlannerViewModel,
         calendar: Calendar = .current,
         currentDate: @escaping () -> Date = { .now }
     ) {
-        self.assignments = assignments
+        self.planner = planner
         self.calendar = calendar
         self.currentDate = currentDate
         self.weekStart = Self.startOfWeek(containing: currentDate(), calendar: calendar)
@@ -31,7 +31,7 @@ final class CalendarViewModel: ObservableObject {
 
     /// The seven days of the shown week, each with its open assignments.
     var days: [CalendarDay] {
-        let openAssignments = assignments
+        let openAssignments = planner.assignments
             .filter { !$0.isCompleted }
             .sorted { $0.dueDate < $1.dueDate }
         let assignmentsByDay = Dictionary(grouping: openAssignments) { calendar.startOfDay(for: $0.dueDate) }
@@ -86,8 +86,7 @@ final class CalendarViewModel: ObservableObject {
     }
 
     func markComplete(_ assignment: Assignment) {
-        guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
-        assignments[index].isCompleted = true
+        planner.markComplete(assignment)
     }
 
     private func moveWeek(by weekCount: Int) {

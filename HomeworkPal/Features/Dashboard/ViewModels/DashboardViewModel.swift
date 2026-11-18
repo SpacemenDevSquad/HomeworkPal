@@ -11,22 +11,23 @@ final class DashboardViewModel: ObservableObject {
         var id: DueBucket { bucket }
     }
 
-    @Published private(set) var assignments: [Assignment]
-    @Published private(set) var courses: [Course]
-
     /// The assignment awaiting confirmation before it's checked off. Drives the confirmation alert.
     @Published var pendingCompletion: Assignment?
     @Published var isAddingAssignment = false
-    @Published var isShowingCalendar = false
 
-    init(assignments: [Assignment] = Assignment.sampleData, courses: [Course] = Course.sampleData) {
-        self.assignments = assignments
-        self.courses = courses
+    private let planner: PlannerViewModel
+
+    init(planner: PlannerViewModel) {
+        self.planner = planner
+    }
+
+    var courses: [Course] {
+        planner.courses
     }
 
     /// Open assignments grouped into time buckets, soonest first. Empty buckets are omitted.
     var sections: [Section] {
-        let openAssignments = assignments
+        let openAssignments = planner.assignments
             .filter { !$0.isCompleted }
             .sorted { $0.dueDate < $1.dueDate }
         let assignmentsByBucket = Dictionary(grouping: openAssignments) { DueBucket.bucket(for: $0.dueDate) }
@@ -47,19 +48,14 @@ final class DashboardViewModel: ObservableObject {
     }
 
     func markComplete(_ assignment: Assignment) {
-        guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
-        assignments[index].isCompleted = true
+        planner.markComplete(assignment)
     }
 
     func startAddingAssignment() {
         isAddingAssignment = true
     }
 
-    func showCalendar() {
-        isShowingCalendar = true
-    }
-
     func addAssignment(_ assignment: Assignment) {
-        assignments.append(assignment)
+        planner.addAssignment(assignment)
     }
 }
