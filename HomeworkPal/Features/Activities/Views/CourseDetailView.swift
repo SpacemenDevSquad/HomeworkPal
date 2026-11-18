@@ -62,6 +62,7 @@ struct CourseDetailView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     let finishedEssay = Assignment(
         title: "Poetry analysis",
@@ -79,3 +80,4 @@ struct CourseDetailView: View {
         CourseDetailView(planner: PlannerViewModel(assignments: []), course: .english)
     }
 }
+#endif

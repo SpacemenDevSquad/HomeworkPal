@@ -39,6 +39,7 @@ struct CourseRow: View {
     }
 }
 
+#if DEBUG
 #Preview {
     List {
         CourseRow(course: .chemistry, openAssignmentCount: 2)
@@ -49,3 +50,4 @@ struct CourseRow: View {
     .scrollContentBackground(.hidden)
     .background(Theme.background)
 }
+#endif

@@ -99,6 +99,7 @@ struct CalendarView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     CalendarView(planner: PlannerViewModel())
 }
@@ -106,3 +107,4 @@ struct CalendarView: View {
 #Preview("Empty") {
     CalendarView(planner: PlannerViewModel(assignments: []))
 }
+#endif

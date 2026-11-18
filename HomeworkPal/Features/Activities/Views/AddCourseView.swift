@@ -113,6 +113,7 @@ struct AddCourseView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     AddCourseView(existingCourses: Course.sampleData) { _ in }
 }
@@ -120,3 +121,4 @@ struct AddCourseView: View {
 #Preview("No Existing Classes") {
     AddCourseView(existingCourses: []) { _ in }
 }
+#endif

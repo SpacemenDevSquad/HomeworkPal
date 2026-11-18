@@ -51,7 +51,9 @@ struct DashboardView: View {
         ContentUnavailableView(
             "Nothing Due",
             systemImage: "checkmark.circle",
-            description: Text("Tap + to add homework.")
+            description: viewModel.courses.isEmpty
+                ? Text("Add your classes in the Activities tab, then tap + to add homework.")
+                : Text("Tap + to add homework.")
         )
         .foregroundStyle(Theme.primaryText)
     }
@@ -78,6 +80,7 @@ struct DashboardView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     DashboardView(planner: PlannerViewModel())
 }
@@ -85,3 +88,4 @@ struct DashboardView: View {
 #Preview("Empty") {
     DashboardView(planner: PlannerViewModel(assignments: []))
 }
+#endif
