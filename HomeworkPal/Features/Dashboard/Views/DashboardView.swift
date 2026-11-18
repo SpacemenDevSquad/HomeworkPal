@@ -20,6 +20,13 @@ struct DashboardView: View {
             .tint(Theme.primaryText)
             .navigationTitle("Upcoming")
             .toolbar {
+                ToolbarItem(placement: .topBarLeading) {
+                    Button(action: viewModel.showCalendar) {
+                        Image(systemName: "calendar")
+                            .foregroundStyle(Theme.primaryText)
+                    }
+                    .accessibilityLabel(Text("Calendar"))
+                }
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: viewModel.startAddingAssignment) {
                         // Brown on orange keeps contrast; the prominent style otherwise defaults to white.
@@ -33,6 +40,10 @@ struct DashboardView: View {
             }
             .sheet(isPresented: $viewModel.isAddingAssignment) {
                 AddAssignmentView(courses: viewModel.courses, onSave: viewModel.addAssignment)
+            }
+            // Full screen rather than pushed, because Calendar has its own navigation stack and back button.
+            .fullScreenCover(isPresented: $viewModel.isShowingCalendar) {
+                CalendarView(assignments: viewModel.assignments, onComplete: viewModel.markComplete)
             }
             .alert("Mark as Complete?", item: $viewModel.pendingCompletion) { assignment in
                 Button("Complete") {

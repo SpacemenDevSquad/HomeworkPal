@@ -17,6 +17,7 @@ final class DashboardViewModel: ObservableObject {
     /// The assignment awaiting confirmation before it's checked off. Drives the confirmation alert.
     @Published var pendingCompletion: Assignment?
     @Published var isAddingAssignment = false
+    @Published var isShowingCalendar = false
 
     init(assignments: [Assignment] = Assignment.sampleData, courses: [Course] = Course.sampleData) {
         self.assignments = assignments
@@ -52,6 +53,10 @@ final class DashboardViewModel: ObservableObject {
 
     func startAddingAssignment() {
         isAddingAssignment = true
+    }
+
+    func showCalendar() {
+        isShowingCalendar = true
     }
 
     func addAssignment(_ assignment: Assignment) {

@@ -13,6 +13,8 @@ enum Theme {
     static let accent = Color("AccentColor")
 
     static let cornerRadius: CGFloat = 14
+    /// Apple's minimum comfortable tap target, in points.
+    static let minimumTapTarget: CGFloat = 44
     static let cardShadowOpacity = 0.08
     static let cardShadowRadius: CGFloat = 6
     static let cardShadowOffset: CGFloat = 2

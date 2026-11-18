@@ -51,4 +51,12 @@ struct DashboardViewModelTests {
 
         #expect(viewModel.isAddingAssignment)
     }
+
+    @Test func showCalendarPresentsCalendar() {
+        let viewModel = DashboardViewModel(assignments: [], courses: Course.sampleData)
+
+        viewModel.showCalendar()
+
+        #expect(viewModel.isShowingCalendar)
+    }
 }

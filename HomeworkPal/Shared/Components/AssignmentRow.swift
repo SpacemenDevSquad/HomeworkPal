@@ -1,7 +1,6 @@
 import SwiftUI
 
 struct AssignmentRow: View {
-    private static let minimumTapTarget: CGFloat = 44
     private static let stripeWidth: CGFloat = 4
     private static let courseDotSize: CGFloat = 8
 
@@ -46,7 +45,7 @@ struct AssignmentRow: View {
             Image(systemName: assignment.isCompleted ? "checkmark.circle.fill" : "circle")
                 .font(.title2)
                 .foregroundStyle(Theme.primaryText)
-                .frame(minWidth: Self.minimumTapTarget, minHeight: Self.minimumTapTarget)
+                .frame(minWidth: Theme.minimumTapTarget, minHeight: Theme.minimumTapTarget)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
