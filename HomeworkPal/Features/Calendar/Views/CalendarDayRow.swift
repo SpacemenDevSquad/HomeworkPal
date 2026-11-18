@@ -109,6 +109,7 @@ struct CalendarDayRow: View {
     }
 }
 
+#if DEBUG
 #Preview {
     let viewModel = CalendarViewModel(planner: PlannerViewModel())
     ScrollView {
@@ -121,3 +122,4 @@ struct CalendarDayRow: View {
     }
     .background(Theme.background)
 }
+#endif

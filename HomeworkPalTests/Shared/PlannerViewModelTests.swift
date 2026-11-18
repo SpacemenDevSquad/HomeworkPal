@@ -42,4 +42,47 @@ struct PlannerViewModelTests {
         #expect(planner.courses == [.biology])
         #expect(planner.assignments == [quiz])
     }
+
+    @Test func startsEmptyUntilLoaded() {
+        let planner = PlannerViewModel(persistence: InMemoryPlannerService(courses: [.english], assignments: [essay]))
+
+        #expect(planner.courses.isEmpty)
+
+        planner.loadPlanner()
+
+        #expect(planner.courses == [.english])
+        #expect(planner.assignments == [essay])
+    }
+
+    @Test func changesAreWrittenToPersistence() throws {
+        let persistence = InMemoryPlannerService()
+        let planner = PlannerViewModel(persistence: persistence)
+
+        planner.addCourse(.english)
+        planner.addAssignment(essay)
+        planner.markComplete(essay)
+
+        let saved = try persistence.fetchPlanner()
+        #expect(saved.courses == [.english])
+        #expect(saved.assignments.map(\.isCompleted) == [true])
+    }
+
+    @Test func failedSaveLeavesDataUnchangedAndReportsError() {
+        let planner = PlannerViewModel(persistence: UnavailablePlannerService())
+
+        planner.addCourse(.english)
+
+        #expect(planner.courses.isEmpty)
+        #expect(planner.isShowingError)
+        #expect(planner.errorMessage == PlannerPersistenceError.storeUnavailable.errorDescription)
+    }
+
+    @Test func dismissingTheErrorClearsIt() {
+        let planner = PlannerViewModel(persistence: UnavailablePlannerService())
+        planner.loadPlanner()
+
+        planner.isShowingError = false
+
+        #expect(planner.errorMessage == nil)
+    }
 }

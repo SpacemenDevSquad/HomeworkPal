@@ -53,26 +53,36 @@ struct AddAssignmentView: View {
 
     private var courseSection: some View {
         Section {
-            Picker("Class or Activity", selection: $viewModel.selectedCourseID) {
-                ForEach(viewModel.courses) { course in
-                    Label {
-                        Text(course.name)
-                            .foregroundStyle(Theme.primaryText)
-                    } icon: {
-                        Image(systemName: "circle.fill")
-                            .foregroundStyle(course.color)
-                            .accessibilityHidden(true)
-                    }
-                    .tag(course.id as Course.ID?)
-                }
+            if viewModel.courses.isEmpty {
+                // Every assignment needs a class, so explain where to make one instead of showing an empty picker.
+                Text("Add a class or activity in the Activities tab first.")
+                    .foregroundStyle(Theme.secondaryText)
+            } else {
+                coursePicker
             }
-            .pickerStyle(.inline)
-            .labelsHidden()
         } header: {
             Text("Class or Activity")
                 .foregroundStyle(Theme.primaryText)
         }
         .listRowBackground(Theme.surface)
+    }
+
+    private var coursePicker: some View {
+        Picker("Class or Activity", selection: $viewModel.selectedCourseID) {
+            ForEach(viewModel.courses) { course in
+                Label {
+                    Text(course.name)
+                        .foregroundStyle(Theme.primaryText)
+                } icon: {
+                    Image(systemName: "circle.fill")
+                        .foregroundStyle(course.color)
+                        .accessibilityHidden(true)
+                }
+                .tag(course.id as Course.ID?)
+            }
+        }
+        .pickerStyle(.inline)
+        .labelsHidden()
     }
 
     private func save() {
@@ -82,6 +92,7 @@ struct AddAssignmentView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     AddAssignmentView(courses: Course.sampleData) { _ in }
 }
@@ -89,3 +100,4 @@ struct AddAssignmentView: View {
 #Preview("No Classes") {
     AddAssignmentView(courses: []) { _ in }
 }
+#endif

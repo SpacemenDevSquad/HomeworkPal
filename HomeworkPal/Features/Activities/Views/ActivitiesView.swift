@@ -94,6 +94,7 @@ struct ActivitiesView: View {
     }
 }
 
+#if DEBUG
 #Preview {
     ActivitiesView(planner: PlannerViewModel())
 }
@@ -101,3 +102,4 @@ struct ActivitiesView: View {
 #Preview("Empty") {
     ActivitiesView(planner: PlannerViewModel(courses: [], assignments: []))
 }
+#endif
