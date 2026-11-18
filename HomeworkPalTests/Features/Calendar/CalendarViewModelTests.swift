@@ -22,7 +22,11 @@ struct CalendarViewModelTests {
 
     private func makeViewModel(assignments: [Assignment]) -> CalendarViewModel {
         let fixedNow = now
-        return CalendarViewModel(assignments: assignments, calendar: calendar, currentDate: { fixedNow })
+        return CalendarViewModel(
+            planner: PlannerViewModel(courses: Course.sampleData, assignments: assignments),
+            calendar: calendar,
+            currentDate: { fixedNow }
+        )
     }
 
     @Test func daysCoverTheCurrentWeekStartingOnFirstWeekday() {
