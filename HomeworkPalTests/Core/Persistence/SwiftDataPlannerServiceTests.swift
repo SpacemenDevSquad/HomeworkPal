@@ -26,6 +26,52 @@ struct SwiftDataPlannerServiceTests {
         #expect(relaunched.assignments == [essay])
     }
 
+    @Test func activityScheduleAndLocationSurviveARelaunch() throws {
+        let (service, container) = try makeService()
+        let soccer = Course(
+            name: "Soccer",
+            colorHex: "#4A9BA3",
+            kind: .activity,
+            schedule: CourseSchedule(
+                weekdays: [.monday, .thursday],
+                startMinutes: 930,
+                endMinutes: 1020,
+                repeatsUntil: Date(timeIntervalSince1970: 1_800_000_000)
+            ),
+            location: "North Field"
+        )
+
+        try service.insertCourse(soccer)
+
+        let relaunched = try SwiftDataPlannerService(container: container).fetchPlanner()
+        #expect(relaunched.courses == [soccer])
+    }
+
+    @Test func editsToCoursesAndAssignmentsAreSaved() throws {
+        let (service, container) = try makeService()
+        let essay = Assignment(title: "Essay", course: english, dueDate: .now)
+        try service.insertCourse(english)
+        try service.insertCourse(biology)
+        try service.insertAssignment(essay)
+
+        var renamed = english
+        renamed.name = "English Lit"
+        renamed.kind = .activity
+        renamed.location = "Room 12"
+        try service.updateCourse(renamed)
+
+        var moved = essay
+        moved.title = "Final essay"
+        moved.dueDate = Date(timeIntervalSince1970: 1_800_000_000)
+        moved.course = biology
+        moved.notes = "Cite three sources"
+        try service.updateAssignment(moved)
+
+        let relaunched = try SwiftDataPlannerService(container: container).fetchPlanner()
+        #expect(relaunched.courses == [renamed, biology])
+        #expect(relaunched.assignments == [moved])
+    }
+
     @Test func coursesLoadInTheOrderTheyWereAdded() throws {
         let (service, _) = try makeService()
 

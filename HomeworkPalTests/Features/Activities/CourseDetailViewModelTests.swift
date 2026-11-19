@@ -23,14 +23,14 @@ struct CourseDetailViewModelTests {
         #expect(viewModel.completedAssignments == [finished])
     }
 
-    @Test func checkingOffAsksForConfirmation() {
+    @Test func checkingOffCompletesTheAssignment() {
         let essay = Assignment(title: "Essay", course: .english, dueDate: now.addingTimeInterval(3_600))
-        let (viewModel, planner) = makeViewModel(assignments: [essay])
+        let (viewModel, _) = makeViewModel(assignments: [essay])
 
         viewModel.toggleCompletion(of: essay)
 
-        #expect(viewModel.pendingCompletion == essay)
-        #expect(planner.assignments.allSatisfy { !$0.isCompleted })
+        #expect(viewModel.openAssignments.isEmpty)
+        #expect(viewModel.completedAssignments.map(\.id) == [essay.id])
     }
 
     @Test func uncheckingCompletedWorkHappensImmediately() {
@@ -39,7 +39,6 @@ struct CourseDetailViewModelTests {
 
         viewModel.toggleCompletion(of: finished)
 
-        #expect(viewModel.pendingCompletion == nil)
         #expect(viewModel.completedAssignments.isEmpty)
         #expect(viewModel.openAssignments.map(\.id) == [finished.id])
     }

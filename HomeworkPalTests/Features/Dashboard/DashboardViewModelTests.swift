@@ -14,6 +14,7 @@ struct DashboardViewModelTests {
     @Test func sectionsAreOrderedByUrgency() {
         let viewModel = makeViewModel(assignments: [laterAssignment, overdueAssignment])
 
+        // Empty sections are left out entirely.
         #expect(viewModel.sections.map(\.bucket) == [.overdue, .later])
     }
 
@@ -21,15 +22,6 @@ struct DashboardViewModelTests {
         let viewModel = makeViewModel(assignments: [])
 
         #expect(viewModel.isEmpty)
-    }
-
-    @Test func requestCompletionSetsPendingAssignmentWithoutCompleting() {
-        let viewModel = makeViewModel(assignments: [overdueAssignment])
-
-        viewModel.requestCompletion(for: overdueAssignment)
-
-        #expect(viewModel.pendingCompletion == overdueAssignment)
-        #expect(viewModel.sections.flatMap(\.assignments) == [overdueAssignment])
     }
 
     @Test func markCompleteRemovesAssignmentFromSections() {

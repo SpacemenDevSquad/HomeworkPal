@@ -11,8 +11,6 @@ final class DashboardViewModel: ObservableObject {
         var id: DueBucket { bucket }
     }
 
-    /// The assignment awaiting confirmation before it's checked off. Drives the confirmation alert.
-    @Published var pendingCompletion: Assignment?
     @Published var isAddingAssignment = false
     /// The assignment Apple's Add Event sheet is open for. Drives the calendar sheet.
     @Published var assignmentToAddToCalendar: Assignment?
@@ -25,13 +23,14 @@ final class DashboardViewModel: ObservableObject {
 
     init(planner: PlannerViewModel) {
         self.planner = planner
+        PlannerObservation.forwardChanges(from: planner, to: self)
     }
 
     var courses: [Course] {
         planner.courses
     }
 
-    /// Open assignments grouped into time buckets, soonest first. Empty buckets are omitted.
+    /// Open assignments grouped into time buckets, soonest first. Empty buckets are left out.
     var sections: [Section] {
         let openAssignments = planner.assignments
             .filter { !$0.isCompleted }
@@ -44,13 +43,9 @@ final class DashboardViewModel: ObservableObject {
         }
     }
 
+    /// No open work at all, so the dashboard shows its empty state.
     var isEmpty: Bool {
         sections.isEmpty
-    }
-
-    /// Asks the user to confirm before checking the assignment off.
-    func requestCompletion(for assignment: Assignment) {
-        pendingCompletion = assignment
     }
 
     func markComplete(_ assignment: Assignment) {

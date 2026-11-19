@@ -15,7 +15,14 @@ extension Assignment {
             title: String(localized: "\(title) (\(course.name))"),
             startDate: dueDate,
             endDate: dueDate,
-            notes: String(localized: "Added by HomeworkPal")
+            notes: eventNotes
         )
+    }
+
+    /// The student's own notes first, if any, then the HomeworkPal credit.
+    private var eventNotes: String {
+        let credit = String(localized: "Added by HomeworkPal")
+        let trimmedNotes = notes.trimmingCharacters(in: .whitespacesAndNewlines)
+        return trimmedNotes.isEmpty ? credit : "\(trimmedNotes)\n\n\(credit)"
     }
 }

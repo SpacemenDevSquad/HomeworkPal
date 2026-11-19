@@ -3,26 +3,40 @@ import SwiftUI
 struct AddAssignmentView: View {
     @StateObject private var viewModel: AddAssignmentViewModel
     @Environment(\.dismiss) private var dismiss
+    /// Counts rejected saves; each one shakes the form and shows what's missing.
+    @State private var rejectedSaveCount = 0
+    @FocusState private var isTitleFocused: Bool
 
     private let onSave: (Assignment, Bool) -> Void
 
-    /// - Parameter onSave: Receives the new assignment and whether the student asked to add it to Apple Calendar.
-    init(courses: [Course], onSave: @escaping (Assignment, Bool) -> Void) {
-        _viewModel = StateObject(wrappedValue: AddAssignmentViewModel(courses: courses))
+    /// - Parameters:
+    ///   - editing: The assignment to edit. Leave `nil` to add a new one.
+    ///   - onSave: Receives the assignment and whether the student asked to add it to Apple Calendar.
+    init(courses: [Course], editing: Assignment? = nil, onSave: @escaping (Assignment, Bool) -> Void) {
+        _viewModel = StateObject(wrappedValue: AddAssignmentViewModel(courses: courses, editing: editing))
         self.onSave = onSave
     }
 
     var body: some View {
         NavigationStack {
             Form {
+                if rejectedSaveCount > 0, let message = viewModel.validationMessage {
+                    Section {
+                        ValidationBanner(message: message)
+                    }
+                    .listRowBackground(Theme.surface)
+                }
                 detailsSection
+                notesSection
                 courseSection
             }
             .scrollContentBackground(.hidden)
+            .rejectedSaveFeedback(attempts: rejectedSaveCount)
+            .animation(.default, value: viewModel.validationMessage == nil)
             .background(Theme.background)
             .foregroundStyle(Theme.primaryText)
             .tint(Theme.primaryText)
-            .navigationTitle("New Assignment")
+            .navigationTitle(viewModel.isEditing ? "Edit Assignment" : "New Assignment")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -30,16 +44,33 @@ struct AddAssignmentView: View {
                 }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(action: save) {
-                        Text("Add")
+                        Text(viewModel.isEditing ? "Save" : "Add")
                             .foregroundStyle(Theme.primaryText)
                     }
                     .buttonStyle(.glassProminent)
                     .tint(Theme.accent)
-                    .disabled(!viewModel.canSave)
+                    // Left enabled so a tap can explain what's missing instead of doing nothing.
                 }
             }
         }
         .presentationBackground(Theme.background)
+    }
+
+    private var notesSection: some View {
+        Section {
+            TextField(
+                text: $viewModel.notes,
+                prompt: Text("Instructions, page numbers, links…").foregroundStyle(Theme.secondaryText),
+                axis: .vertical
+            ) {
+                Text("Notes")
+            }
+            .lineLimit(3...8)
+        } header: {
+            Text("Notes")
+                .foregroundStyle(Theme.primaryText)
+        }
+        .listRowBackground(Theme.surface)
     }
 
     private var detailsSection: some View {
@@ -47,31 +78,58 @@ struct AddAssignmentView: View {
             TextField(text: $viewModel.title, prompt: Text("Title").foregroundStyle(Theme.secondaryText)) {
                 Text("Title")
             }
+            .focused($isTitleFocused)
             DatePicker("Due", selection: $viewModel.dueDate)
-            Toggle("Add to Calendar", isOn: $viewModel.addToCalendar)
+            // Editing offers Add to Calendar from the assignment's own screen instead.
+            if !viewModel.isEditing {
+                Toggle("Add to Apple Calendar", isOn: $viewModel.addToCalendar)
+            }
         }
         .listRowBackground(Theme.surface)
     }
 
+    // Classes and activities are separate form sections, classes first, with their names as standard
+    // section headings above each group. Rows act as one single-choice list across both sections.
+    @ViewBuilder
     private var courseSection: some View {
-        Section {
-            if viewModel.courses.isEmpty {
-                // Every assignment needs a class, so explain where to make one instead of showing an empty picker.
+        if viewModel.courses.isEmpty {
+            Section {
+                // Every assignment needs a class, so explain where to make one instead of showing an empty list.
                 Text("Add a class or activity in the Activities tab first.")
                     .foregroundStyle(Theme.secondaryText)
-            } else {
-                coursePicker
+            } header: {
+                Text("Class or Activity")
+                    .foregroundStyle(Theme.primaryText)
             }
-        } header: {
-            Text("Class or Activity")
-                .foregroundStyle(Theme.primaryText)
+            .listRowBackground(Theme.surface)
+        } else {
+            courseGroup(title: "Classes", courses: viewModel.classes)
+            courseGroup(title: "Activities", courses: viewModel.activities)
         }
-        .listRowBackground(Theme.surface)
     }
 
-    private var coursePicker: some View {
-        Picker("Class or Activity", selection: $viewModel.selectedCourseID) {
-            ForEach(viewModel.courses) { course in
+    @ViewBuilder
+    private func courseGroup(title: LocalizedStringKey, courses: [Course]) -> some View {
+        if !courses.isEmpty {
+            Section {
+                ForEach(courses) { course in
+                    courseRow(for: course)
+                }
+            } header: {
+                Text(title)
+                    .foregroundStyle(Theme.primaryText)
+            }
+            .listRowBackground(Theme.surface)
+        }
+    }
+
+    // The selected row shows a checkmark, so the choice doesn't rely on color alone.
+    private func courseRow(for course: Course) -> some View {
+        let isSelected = viewModel.selectedCourseID == course.id
+        return Button {
+            viewModel.selectedCourseID = course.id
+        } label: {
+            HStack {
                 Label {
                     Text(course.name)
                         .foregroundStyle(Theme.primaryText)
@@ -80,15 +138,29 @@ struct AddAssignmentView: View {
                         .foregroundStyle(course.color)
                         .accessibilityHidden(true)
                 }
-                .tag(course.id as Course.ID?)
+                Spacer()
+                if isSelected {
+                    Image(systemName: "checkmark")
+                        .font(.body.weight(.semibold))
+                        .foregroundStyle(Theme.primaryText)
+                        .accessibilityHidden(true)
+                }
             }
+            .contentShape(.rect)
         }
-        .pickerStyle(.inline)
-        .labelsHidden()
+        .buttonStyle(.plain)
+        .sensoryFeedback(.selection, trigger: isSelected) { _, nowSelected in nowSelected }
+        .accessibilityAddTraits(isSelected ? .isSelected : [])
     }
 
     private func save() {
-        guard let assignment = viewModel.makeAssignment() else { return }
+        guard let assignment = viewModel.makeAssignment() else {
+            rejectedSaveCount += 1
+            if viewModel.isMissingTitle {
+                isTitleFocused = true
+            }
+            return
+        }
         onSave(assignment, viewModel.addToCalendar)
         dismiss()
     }

@@ -5,7 +5,8 @@ struct SectionHeader: View {
     private static let badgeVerticalPadding: CGFloat = 2
 
     let title: LocalizedStringResource
-    let count: Int
+    /// The number shown in the badge beside the title, or `nil` to show no badge.
+    var count: Int? = nil
     /// Fills the count badge with the orange accent to draw attention, such as for overdue work.
     var isEmphasized = false
 
@@ -14,12 +15,14 @@ struct SectionHeader: View {
             Text(title)
                 .font(.headline)
                 .foregroundStyle(Theme.primaryText)
-            Text(count, format: .number)
-                .font(.caption.weight(.semibold))
-                .foregroundStyle(Theme.primaryText)
-                .padding(.horizontal, Self.badgeHorizontalPadding)
-                .padding(.vertical, Self.badgeVerticalPadding)
-                .background(isEmphasized ? Theme.accent : Theme.surface, in: .capsule)
+            if let count {
+                Text(count, format: .number)
+                    .font(.caption.weight(.semibold))
+                    .foregroundStyle(Theme.primaryText)
+                    .padding(.horizontal, Self.badgeHorizontalPadding)
+                    .padding(.vertical, Self.badgeVerticalPadding)
+                    .background(isEmphasized ? Theme.accent : Theme.surface, in: .capsule)
+            }
             Spacer()
         }
         .padding(.vertical, 8)

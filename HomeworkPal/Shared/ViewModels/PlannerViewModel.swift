@@ -42,6 +42,14 @@ final class PlannerViewModel {
         }
     }
 
+    func updateAssignment(_ assignment: Assignment) {
+        guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
+        perform {
+            try persistence.updateAssignment(assignment)
+            assignments[index] = assignment
+        }
+    }
+
     func markComplete(_ assignment: Assignment) {
         setCompletion(true, for: assignment)
     }
@@ -64,6 +72,27 @@ final class PlannerViewModel {
             try persistence.insertCourse(course)
             courses.append(course)
         }
+    }
+
+    /// Saves edits to a class or activity. Assignments carry a copy of their course, so those copies are
+    /// refreshed too, keeping names and colors in step everywhere.
+    func updateCourse(_ course: Course) {
+        guard let index = courses.firstIndex(where: { $0.id == course.id }) else { return }
+        perform {
+            try persistence.updateCourse(course)
+            courses[index] = course
+            for assignmentIndex in assignments.indices where assignments[assignmentIndex].course.id == course.id {
+                assignments[assignmentIndex].course = course
+            }
+        }
+    }
+
+    func course(withID id: Course.ID) -> Course? {
+        courses.first { $0.id == id }
+    }
+
+    func assignment(withID id: Assignment.ID) -> Assignment? {
+        assignments.first { $0.id == id }
     }
 
     /// Deletes the class or activity together with its assignments, so no assignment is left without one.

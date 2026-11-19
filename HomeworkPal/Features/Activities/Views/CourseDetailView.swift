@@ -1,6 +1,8 @@
 import SwiftUI
 
 struct CourseDetailView: View {
+    private static let colorBarWidth: CGFloat = 6
+
     @StateObject private var viewModel: CourseDetailViewModel
 
     init(planner: PlannerViewModel, course: Course) {
@@ -9,24 +11,68 @@ struct CourseDetailView: View {
 
     var body: some View {
         ScrollView {
-            if viewModel.isEmpty {
-                emptyState
-            } else {
-                assignmentList
+            VStack(spacing: 10) {
+                if hasDetails {
+                    detailsCard
+                        .padding(.horizontal)
+                }
+                if viewModel.isEmpty {
+                    emptyState
+                } else {
+                    assignmentList
+                }
             }
         }
         .background(Theme.background)
         .navigationTitle(viewModel.course.name)
-        .alert("Mark as Complete?", item: $viewModel.pendingCompletion) { assignment in
-            Button("Complete") {
-                withAnimation { viewModel.markComplete(assignment) }
+        .toolbar {
+            ToolbarItem(placement: .primaryAction) {
+                Button("Edit", action: viewModel.startEditing)
             }
-            // Marks Complete as the default action so the system shows it with greater prominence.
-            .keyboardShortcut(.defaultAction)
-            Button("Cancel", role: .cancel) {}
-        } message: { assignment in
-            Text("\"\(assignment.title)\" will be checked off your list.")
         }
+        .sheet(isPresented: $viewModel.isEditing) {
+            AddCourseView(existingCourses: viewModel.allCourses, editing: viewModel.course, onSave: viewModel.save)
+        }
+    }
+
+    private var hasDetails: Bool {
+        viewModel.course.schedule != nil || viewModel.course.location != nil
+    }
+
+    /// When and where the class or activity meets.
+    private var detailsCard: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if let schedule = viewModel.course.schedule {
+                Label {
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(schedule.daysDescription())
+                            .font(.body.weight(.medium))
+                        Text(schedule.timeRange(), format: .interval.hour().minute())
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.secondaryText)
+                        Text("Until \(schedule.repeatsUntil, format: .dateTime.month(.wide).day().year())")
+                            .font(.subheadline)
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                } icon: {
+                    Image(systemName: "clock")
+                }
+            }
+            if let location = viewModel.course.location {
+                Label(location, systemImage: "mappin.and.ellipse")
+            }
+        }
+        .foregroundStyle(Theme.primaryText)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(12)
+        .background(Theme.surface, in: .rect(cornerRadius: Theme.cornerRadius))
+        .overlay(alignment: .leading) {
+            UnevenRoundedRectangle(topLeadingRadius: Theme.cornerRadius, bottomLeadingRadius: Theme.cornerRadius)
+                .fill(viewModel.course.color)
+                .frame(width: Self.colorBarWidth)
+        }
+        .clipShape(.rect(cornerRadius: Theme.cornerRadius))
+        .accessibilityElement(children: .combine)
     }
 
     private var emptyState: some View {
@@ -52,7 +98,7 @@ struct CourseDetailView: View {
             Section {
                 ForEach(assignments) { assignment in
                     AssignmentRow(assignment: assignment, isOverdue: viewModel.isOverdue(assignment)) {
-                        withAnimation { viewModel.toggleCompletion(of: assignment) }
+                        viewModel.toggleCompletion(of: assignment)
                     }
                 }
             } header: {

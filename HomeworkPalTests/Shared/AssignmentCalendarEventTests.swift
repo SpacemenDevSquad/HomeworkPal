@@ -23,6 +23,12 @@ struct AssignmentCalendarEventTests {
         #expect(details.notes == "Added by HomeworkPal")
     }
 
+    @Test func studentNotesComeBeforeTheCredit() {
+        let assignment = Assignment(title: "Essay", course: .english, dueDate: dueDate, notes: " Pages 40-52 \n")
+
+        #expect(assignment.calendarEventDetails.notes == "Pages 40-52\n\nAdded by HomeworkPal")
+    }
+
     @Test func newAssignmentIsNotAddedToCalendar() {
         #expect(!Assignment(title: "A", course: .english, dueDate: .now).isAddedToCalendar)
     }

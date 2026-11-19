@@ -3,7 +3,11 @@ import SwiftUI
 struct DashboardView: View {
     @StateObject private var viewModel: DashboardViewModel
 
+    /// Kept to build each assignment's detail screen.
+    private let planner: PlannerViewModel
+
     init(planner: PlannerViewModel) {
+        self.planner = planner
         _viewModel = StateObject(wrappedValue: DashboardViewModel(planner: planner))
     }
 
@@ -19,6 +23,9 @@ struct DashboardView: View {
             .background(Theme.background)
             .tint(Theme.primaryText)
             .navigationTitle("Upcoming")
+            .navigationDestination(for: AssignmentLink.self) { link in
+                AssignmentDetailView(planner: planner, assignmentID: link.id)
+            }
             .toolbar {
                 ToolbarItem(placement: .primaryAction) {
                     Button(action: viewModel.startAddingAssignment) {
@@ -42,16 +49,6 @@ struct DashboardView: View {
                 // without this, a swipe would silently discard the student's edits.
                 .interactiveDismissDisabled()
             }
-            .alert("Mark as Complete?", item: $viewModel.pendingCompletion) { assignment in
-                Button("Complete") {
-                    withAnimation { viewModel.markComplete(assignment) }
-                }
-                // Marks Complete as the default action so the system shows it with greater prominence.
-                .keyboardShortcut(.defaultAction)
-                Button("Cancel", role: .cancel) {}
-            } message: { assignment in
-                Text("\"\(assignment.title)\" will be checked off your list.")
-            }
         }
     }
 
@@ -74,16 +71,13 @@ struct DashboardView: View {
                         AssignmentRow(
                             assignment: assignment,
                             isOverdue: section.bucket == .overdue,
-                            onToggle: { viewModel.requestCompletion(for: assignment) },
+                            dueDateStyle: section.bucket.showsDateInsteadOfTime ? .date : .weekdayAndTime,
+                            onToggle: { viewModel.markComplete(assignment) },
                             onAddToCalendar: { viewModel.requestCalendarEvent(for: assignment) }
                         )
                     }
                 } header: {
-                    SectionHeader(
-                        title: section.bucket.title,
-                        count: section.assignments.count,
-                        isEmphasized: section.bucket == .overdue
-                    )
+                    SectionHeader(title: section.bucket.title)
                 }
             }
         }

@@ -4,6 +4,8 @@ import Foundation
 @MainActor
 final class ActivitiesViewModel: ObservableObject {
     @Published var isAddingCourse = false
+    /// The tab being shown. New items are added to this tab.
+    @Published var selectedKind: CourseKind = .schoolClass
     /// The class or activity awaiting confirmation before it's deleted. Drives the confirmation alert.
     @Published var pendingDeletion: Course?
 
@@ -11,14 +13,21 @@ final class ActivitiesViewModel: ObservableObject {
 
     init(planner: PlannerViewModel) {
         self.planner = planner
+        PlannerObservation.forwardChanges(from: planner, to: self)
     }
 
+    /// Every class and activity, for checking new names against all of them.
     var courses: [Course] {
         planner.courses
     }
 
+    /// The classes or activities on the selected tab.
+    var visibleCourses: [Course] {
+        courses.filter { $0.kind == selectedKind }
+    }
+
     var isEmpty: Bool {
-        courses.isEmpty
+        visibleCourses.isEmpty
     }
 
     func openAssignmentCount(for course: Course) -> Int {

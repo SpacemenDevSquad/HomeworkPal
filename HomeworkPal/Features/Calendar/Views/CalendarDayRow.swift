@@ -19,7 +19,7 @@ struct CalendarDayRow: View {
                     AssignmentRow(
                         assignment: assignment,
                         isOverdue: viewModel.isOverdue(assignment),
-                        onToggle: { viewModel.requestCompletion(for: assignment) },
+                        onToggle: { viewModel.markComplete(assignment) },
                         onAddToCalendar: { viewModel.requestCalendarEvent(for: assignment) }
                     )
                 }

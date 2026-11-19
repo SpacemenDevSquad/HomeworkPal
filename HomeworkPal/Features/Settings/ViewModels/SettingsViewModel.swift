@@ -27,7 +27,7 @@ final class SettingsViewModel: ObservableObject {
     init(
         userDefaults: UserDefaults = .standard,
         calendar: Calendar = .current,
-        notificationService: NotificationAuthorizationServiceProtocol = NotificationAuthorizationService(),
+        notificationService: NotificationAuthorizationServiceProtocol = DummyNotificationAuthorizationService(),
         userDataService: UserDataServiceProtocol
     ) {
         self.userDefaults = userDefaults

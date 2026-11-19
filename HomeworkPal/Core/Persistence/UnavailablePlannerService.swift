@@ -15,6 +15,14 @@ struct UnavailablePlannerService: PlannerPersistenceService {
         throw PlannerPersistenceError.storeUnavailable
     }
 
+    func updateCourse(_ course: Course) throws {
+        throw PlannerPersistenceError.storeUnavailable
+    }
+
+    func updateAssignment(_ assignment: Assignment) throws {
+        throw PlannerPersistenceError.storeUnavailable
+    }
+
     func insertAssignment(_ assignment: Assignment) throws {
         throw PlannerPersistenceError.storeUnavailable
     }

@@ -12,6 +12,8 @@ nonisolated struct Assignment: Identifiable, Hashable, Codable, Sendable {
     /// Set once the student saves the event in Apple's Add Event sheet. Without calendar access the app
     /// can't see the event afterwards, so this can't detect a later deletion.
     var isAddedToCalendar: Bool
+    /// Free-form notes, such as instructions or page numbers. Empty when there are none.
+    var notes: String
 
     init(
         id: UUID = UUID(),
@@ -19,7 +21,8 @@ nonisolated struct Assignment: Identifiable, Hashable, Codable, Sendable {
         course: Course,
         dueDate: Date,
         isCompleted: Bool = false,
-        isAddedToCalendar: Bool = false
+        isAddedToCalendar: Bool = false,
+        notes: String = ""
     ) {
         self.id = id
         self.title = title
@@ -27,6 +30,7 @@ nonisolated struct Assignment: Identifiable, Hashable, Codable, Sendable {
         self.dueDate = dueDate
         self.isCompleted = isCompleted
         self.isAddedToCalendar = isAddedToCalendar
+        self.notes = notes
     }
 }
 
