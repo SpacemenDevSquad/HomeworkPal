@@ -174,4 +174,33 @@ struct CalendarViewModelTests {
 
         #expect(viewModel.days.allSatisfy { $0.isEmpty })
     }
+
+    @Test func requestCalendarEventSetsAssignment() {
+        let assignment = Assignment(title: "Essay", course: .english, dueDate: date(day: 19, hour: 9))
+        let viewModel = makeViewModel(assignments: [assignment])
+
+        viewModel.requestCalendarEvent(for: assignment)
+
+        #expect(viewModel.assignmentToAddToCalendar == assignment)
+    }
+
+    @Test func markAddedToCalendarSetsFlagAndKeepsDay() {
+        let assignment = Assignment(title: "Essay", course: .english, dueDate: date(day: 19, hour: 9))
+        let viewModel = makeViewModel(assignments: [assignment])
+
+        viewModel.markAddedToCalendar(assignment)
+
+        let thursday = viewModel.days.first { $0.date == date(day: 19) }
+        #expect(thursday?.assignments.first?.isAddedToCalendar == true)
+    }
+
+    @Test func markAddedToCalendarIgnoresUnknownAssignment() {
+        let assignment = Assignment(title: "Essay", course: .english, dueDate: date(day: 19, hour: 9))
+        let unknown = Assignment(title: "Other", course: .biology, dueDate: date(day: 20, hour: 9))
+        let viewModel = makeViewModel(assignments: [assignment])
+
+        viewModel.markAddedToCalendar(unknown)
+
+        #expect(viewModel.days.flatMap(\.assignments) == [assignment])
+    }
 }

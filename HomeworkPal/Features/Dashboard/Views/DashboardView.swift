@@ -48,7 +48,11 @@ struct DashboardView: View {
             }
             // Full screen rather than pushed, because Calendar has its own navigation stack and back button.
             .fullScreenCover(isPresented: $viewModel.isShowingCalendar) {
-                CalendarView(assignments: viewModel.assignments, onComplete: viewModel.markComplete)
+                CalendarView(
+                    assignments: viewModel.assignments,
+                    onComplete: viewModel.markComplete,
+                    onAddedToCalendar: viewModel.markAddedToCalendar
+                )
             }
             .alert("Mark as Complete?", item: $viewModel.pendingCompletion) { assignment in
                 Button("Complete") {

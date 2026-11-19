@@ -13,6 +13,8 @@ final class CalendarViewModel: ObservableObject {
 
     /// The assignment awaiting confirmation before it's checked off. Drives the confirmation alert.
     @Published var pendingCompletion: Assignment?
+    /// The assignment Apple's Add Event sheet is open for. Drives the calendar sheet.
+    @Published var assignmentToAddToCalendar: Assignment?
 
     private let calendar: Calendar
     /// Read on demand rather than stored, so "today" stays correct if the app stays open past midnight.
@@ -88,6 +90,15 @@ final class CalendarViewModel: ObservableObject {
     func markComplete(_ assignment: Assignment) {
         guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
         assignments[index].isCompleted = true
+    }
+
+    func requestCalendarEvent(for assignment: Assignment) {
+        assignmentToAddToCalendar = assignment
+    }
+
+    func markAddedToCalendar(_ assignment: Assignment) {
+        guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
+        assignments[index].isAddedToCalendar = true
     }
 
     private func moveWeek(by weekCount: Int) {

@@ -16,9 +16,12 @@ struct CalendarDayRow: View {
             summaryCard
             if isExpanded {
                 ForEach(day.assignments) { assignment in
-                    AssignmentRow(assignment: assignment, isOverdue: viewModel.isOverdue(assignment)) {
-                        viewModel.requestCompletion(for: assignment)
-                    }
+                    AssignmentRow(
+                        assignment: assignment,
+                        isOverdue: viewModel.isOverdue(assignment),
+                        onToggle: { viewModel.requestCompletion(for: assignment) },
+                        onAddToCalendar: { viewModel.requestCalendarEvent(for: assignment) }
+                    )
                 }
             }
         }

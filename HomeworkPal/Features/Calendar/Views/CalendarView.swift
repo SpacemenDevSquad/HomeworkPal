@@ -5,11 +5,19 @@ struct CalendarView: View {
     @Environment(\.dismiss) private var dismiss
 
     private let onComplete: (Assignment) -> Void
+    private let onAddedToCalendar: (Assignment) -> Void
 
-    /// - Parameter onComplete: Called when an assignment is checked off here, so the owner of the assignments can record it.
-    init(assignments: [Assignment] = Assignment.sampleData, onComplete: @escaping (Assignment) -> Void = { _ in }) {
+    /// - Parameters:
+    ///   - onComplete: Called when an assignment is checked off here, so the owner of the assignments can record it.
+    ///   - onAddedToCalendar: Called when an assignment's event is saved to Apple Calendar here, for the same reason.
+    init(
+        assignments: [Assignment] = Assignment.sampleData,
+        onComplete: @escaping (Assignment) -> Void = { _ in },
+        onAddedToCalendar: @escaping (Assignment) -> Void = { _ in }
+    ) {
         _viewModel = StateObject(wrappedValue: CalendarViewModel(assignments: assignments))
         self.onComplete = onComplete
+        self.onAddedToCalendar = onAddedToCalendar
     }
 
     var body: some View {
@@ -31,6 +39,12 @@ struct CalendarView: View {
             .tint(Theme.primaryText)
             // The system large title can't hold a button beside it, so the title is drawn in `titleHeader` instead.
             .toolbar(.hidden, for: .navigationBar)
+            .sheet(item: $viewModel.assignmentToAddToCalendar) { assignment in
+                AddToCalendarSheet(assignment: assignment) {
+                    viewModel.markAddedToCalendar(assignment)
+                    onAddedToCalendar(assignment)
+                }
+            }
             .alert("Mark as Complete?", item: $viewModel.pendingCompletion) { assignment in
                 Button("Complete") {
                     withAnimation { viewModel.markComplete(assignment) }
