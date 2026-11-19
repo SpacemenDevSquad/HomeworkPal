@@ -14,11 +14,20 @@ struct ActivitiesView: View {
     var body: some View {
         NavigationStack {
             content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .safeAreaInset(edge: .top) {
+                    kindPicker
+                }
+                .animation(.default, value: viewModel.selectedKind)
                 .background(Theme.background)
                 .tint(Theme.primaryText)
-                .navigationTitle("Activities")
+                // Matches the selected tab, so the title reads "Classes" or "Activities".
+                .navigationTitle(viewModel.selectedKind == .activity ? "Activities" : "Classes")
                 .navigationDestination(for: Course.self) { course in
                     CourseDetailView(planner: planner, course: course)
+                }
+                .navigationDestination(for: AssignmentLink.self) { link in
+                    AssignmentDetailView(planner: planner, assignmentID: link.id)
                 }
                 .toolbar {
                     ToolbarItem(placement: .primaryAction) {
@@ -29,13 +38,13 @@ struct ActivitiesView: View {
                         }
                         .buttonStyle(.glassProminent)
                         .tint(Theme.accent)
-                        .accessibilityLabel(Text("Add Class or Activity"))
+                        .accessibilityLabel(viewModel.selectedKind == .activity ? Text("Add Activity") : Text("Add Class"))
                     }
                 }
                 .sheet(isPresented: $viewModel.isAddingCourse) {
-                    AddCourseView(existingCourses: viewModel.courses, onSave: viewModel.addCourse)
+                    AddCourseView(existingCourses: viewModel.courses, kind: viewModel.selectedKind, onSave: viewModel.addCourse)
                 }
-                .alert("Delete Class?", item: $viewModel.pendingDeletion) { course in
+                .alert(viewModel.pendingDeletion?.kind == .activity ? "Delete Activity?" : "Delete Class?", item: $viewModel.pendingDeletion) { course in
                     Button("Delete", role: .destructive) {
                         withAnimation { viewModel.deleteCourse(course) }
                     }
@@ -46,27 +55,51 @@ struct ActivitiesView: View {
         }
     }
 
+    private var kindPicker: some View {
+        Picker("Show", selection: $viewModel.selectedKind) {
+            Text("Classes").tag(CourseKind.schoolClass)
+            Text("Activities").tag(CourseKind.activity)
+        }
+        .pickerStyle(.segmented)
+        .padding(.horizontal)
+        .padding(.bottom, 8)
+    }
+
     @ViewBuilder
     private var content: some View {
         if viewModel.isEmpty {
-            ContentUnavailableView(
-                "No Classes Yet",
-                systemImage: "books.vertical",
-                description: Text("Tap + to add a class or activity.")
-            )
-            .foregroundStyle(Theme.primaryText)
+            emptyState
+                .foregroundStyle(Theme.primaryText)
         } else {
             courseList
         }
     }
 
+    @ViewBuilder
+    private var emptyState: some View {
+        switch viewModel.selectedKind {
+        case .schoolClass:
+            ContentUnavailableView(
+                "No Classes Yet",
+                systemImage: "books.vertical",
+                description: Text("Tap + to add a class.")
+            )
+        case .activity:
+            ContentUnavailableView(
+                "No Activities Yet",
+                systemImage: "figure.run",
+                description: Text("Tap + to add a sport, club, or other activity.")
+            )
+        }
+    }
+
     private var courseList: some View {
         List {
-            ForEach(viewModel.courses) { course in
+            ForEach(viewModel.visibleCourses) { course in
                 NavigationLink(value: course) {
                     CourseRow(course: course, openAssignmentCount: viewModel.openAssignmentCount(for: course))
                 }
-                .listRowBackground(Theme.surface)
+                .listRowBackground(CourseRow.background(for: course))
                 // Not `.destructive`: that role animates the row away before the user confirms in the alert.
                 .swipeActions(allowsFullSwipe: false) {
                     Button("Delete", systemImage: "trash") {

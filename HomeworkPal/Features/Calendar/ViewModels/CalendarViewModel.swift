@@ -1,6 +1,12 @@
 import Combine
 import Foundation
 
+/// Which way the calendar moves when the shown week changes, so the week can slide in from the matching side.
+enum WeekChangeDirection: Equatable {
+    case forward
+    case backward
+}
+
 @MainActor
 final class CalendarViewModel: ObservableObject {
     private static let daysInWeek = 7
@@ -10,8 +16,6 @@ final class CalendarViewModel: ObservableObject {
     /// The day whose assignments are expanded. Only one day is expanded at a time.
     @Published private(set) var expandedDayID: CalendarDay.ID?
 
-    /// The assignment awaiting confirmation before it's checked off. Drives the confirmation alert.
-    @Published var pendingCompletion: Assignment?
     /// The assignment Apple's Add Event sheet is open for. Drives the calendar sheet.
     @Published var assignmentToAddToCalendar: Assignment?
     /// The day awaiting confirmation before all its assignments are added to Calendar. Drives the confirmation alert.
@@ -33,6 +37,7 @@ final class CalendarViewModel: ObservableObject {
         self.calendar = calendar
         self.currentDate = currentDate
         self.weekStart = Self.startOfWeek(containing: currentDate(), calendar: calendar)
+        PlannerObservation.forwardChanges(from: planner, to: self)
     }
 
     /// The seven days of the shown week, each with its open assignments.
@@ -68,8 +73,25 @@ final class CalendarViewModel: ObservableObject {
     }
 
     func showCurrentWeek() {
-        weekStart = Self.startOfWeek(containing: currentDate(), calendar: calendar)
+        showWeek(containing: currentDate())
+    }
+
+    /// Jumps to the week that contains `date`, such as a day picked from the month calendar.
+    func showWeek(containing date: Date) {
+        let newWeekStart = Self.startOfWeek(containing: date, calendar: calendar)
+        guard newWeekStart != weekStart else { return }
+        weekStart = newWeekStart
         expandedDayID = nil
+    }
+
+    /// Whether reaching the week containing `date` means moving forward or backward from the shown week.
+    func direction(toWeekContaining date: Date) -> WeekChangeDirection {
+        Self.startOfWeek(containing: date, calendar: calendar) < weekStart ? .backward : .forward
+    }
+
+    /// The day the month picker opens on: today when this week is shown, otherwise the shown week's first day.
+    var pickerStartDate: Date {
+        isShowingCurrentWeek ? calendar.startOfDay(for: currentDate()) : weekStart
     }
 
     /// Expands the day to show every item, or collapses it if it's already open. Empty days have nothing to expand.
@@ -84,11 +106,6 @@ final class CalendarViewModel: ObservableObject {
 
     func isOverdue(_ assignment: Assignment) -> Bool {
         DueBucket.bucket(for: assignment.dueDate, now: currentDate(), calendar: calendar) == .overdue
-    }
-
-    /// Asks the user to confirm before checking the assignment off.
-    func requestCompletion(for assignment: Assignment) {
-        pendingCompletion = assignment
     }
 
     func markComplete(_ assignment: Assignment) {

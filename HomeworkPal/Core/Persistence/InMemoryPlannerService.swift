@@ -24,6 +24,24 @@ final class InMemoryPlannerService: PlannerPersistenceService {
         assignments.removeAll { $0.course.id == course.id }
     }
 
+    func updateCourse(_ course: Course) throws {
+        guard let index = courses.firstIndex(where: { $0.id == course.id }) else {
+            throw PlannerPersistenceError.courseNotFound
+        }
+        courses[index] = course
+        for assignmentIndex in assignments.indices where assignments[assignmentIndex].course.id == course.id {
+            assignments[assignmentIndex].course = course
+        }
+    }
+
+    func updateAssignment(_ assignment: Assignment) throws {
+        guard courses.contains(where: { $0.id == assignment.course.id }) else {
+            throw PlannerPersistenceError.courseNotFound
+        }
+        guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
+        assignments[index] = assignment
+    }
+
     func insertAssignment(_ assignment: Assignment) throws {
         guard courses.contains(where: { $0.id == assignment.course.id }) else {
             throw PlannerPersistenceError.courseNotFound

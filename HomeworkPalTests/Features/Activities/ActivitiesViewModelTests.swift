@@ -50,4 +50,21 @@ struct ActivitiesViewModelTests {
 
         #expect(viewModel.isEmpty)
     }
+
+    @Test func tabsSplitClassesFromActivities() {
+        let viewModel = ActivitiesViewModel(planner: PlannerViewModel(courses: [.english, .soccer, .biology], assignments: []))
+
+        #expect(viewModel.visibleCourses == [.english, .biology])
+
+        viewModel.selectedKind = .activity
+        #expect(viewModel.visibleCourses == [.soccer])
+    }
+
+    @Test func emptyStateIsPerTab() {
+        let viewModel = makeViewModel()
+
+        #expect(!viewModel.isEmpty)
+        viewModel.selectedKind = .activity
+        #expect(viewModel.isEmpty)
+    }
 }

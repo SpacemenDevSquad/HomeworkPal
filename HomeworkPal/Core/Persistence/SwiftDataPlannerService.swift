@@ -46,6 +46,23 @@ final class SwiftDataPlannerService: PlannerPersistenceService {
         try save()
     }
 
+    func updateCourse(_ course: Course) throws {
+        guard let record = try courseRecord(withID: course.id) else {
+            throw PlannerPersistenceError.courseNotFound
+        }
+        record.apply(course)
+        try save()
+    }
+
+    func updateAssignment(_ assignment: Assignment) throws {
+        guard let courseRecord = try courseRecord(withID: assignment.course.id) else {
+            throw PlannerPersistenceError.courseNotFound
+        }
+        guard let record = try assignmentRecord(withID: assignment.id) else { return }
+        record.apply(assignment, course: courseRecord)
+        try save()
+    }
+
     func insertAssignment(_ assignment: Assignment) throws {
         guard let courseRecord = try courseRecord(withID: assignment.course.id) else {
             throw PlannerPersistenceError.courseNotFound

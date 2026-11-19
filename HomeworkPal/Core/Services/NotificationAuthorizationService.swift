@@ -20,3 +20,13 @@ final class NotificationAuthorizationService: NotificationAuthorizationServicePr
         try await UNUserNotificationCenter.current().requestAuthorization(options: [.alert, .sound, .badge])
     }
 }
+
+/// Temporary stand-in that never asks the system and always reports permission as granted.
+///
+/// The test devices can't grant notification permission yet, so the Allow Notifications toggle
+/// just flips the saved preference. Swap `SettingsViewModel`'s default back to
+/// `NotificationAuthorizationService()` once real notifications are wired up.
+final class DummyNotificationAuthorizationService: NotificationAuthorizationServiceProtocol {
+    func isAuthorized() async -> Bool { true }
+    func requestAuthorization() async throws -> Bool { true }
+}

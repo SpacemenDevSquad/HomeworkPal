@@ -3,10 +3,10 @@ import Foundation
 
 @MainActor
 final class CourseDetailViewModel: ObservableObject {
-    /// The assignment awaiting confirmation before it's checked off. Drives the confirmation alert.
-    @Published var pendingCompletion: Assignment?
+    @Published var isEditing = false
 
-    let course: Course
+    /// The course as it was when the screen opened, used if it's deleted while still on screen.
+    private let initialCourse: Course
 
     private let planner: PlannerViewModel
     /// Read on demand rather than stored, so overdue status stays correct while the screen is open.
@@ -14,8 +14,27 @@ final class CourseDetailViewModel: ObservableObject {
 
     init(planner: PlannerViewModel, course: Course, currentDate: @escaping () -> Date = { .now }) {
         self.planner = planner
-        self.course = course
+        self.initialCourse = course
         self.currentDate = currentDate
+        PlannerObservation.forwardChanges(from: planner, to: self)
+    }
+
+    /// The live course, so edits show up on this screen right away.
+    var course: Course {
+        planner.course(withID: initialCourse.id) ?? initialCourse
+    }
+
+    /// Every class and activity, for checking an edited name against the others.
+    var allCourses: [Course] {
+        planner.courses
+    }
+
+    func startEditing() {
+        isEditing = true
+    }
+
+    func save(_ course: Course) {
+        planner.updateCourse(course)
     }
 
     /// Open assignments, soonest first.
@@ -40,12 +59,12 @@ final class CourseDetailViewModel: ObservableObject {
         !assignment.isCompleted && DueBucket.bucket(for: assignment.dueDate, now: currentDate()) == .overdue
     }
 
-    /// Completing asks for confirmation; un-checking a completed item is an undo, so it happens right away.
+    /// Flips the assignment between open and completed. The row shows the checkmark before this runs.
     func toggleCompletion(of assignment: Assignment) {
         if assignment.isCompleted {
             planner.markIncomplete(assignment)
         } else {
-            pendingCompletion = assignment
+            planner.markComplete(assignment)
         }
     }
 

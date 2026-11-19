@@ -8,6 +8,12 @@ enum DueBucket: Int, CaseIterable, Identifiable, Sendable {
 
     var id: Int { rawValue }
 
+    /// Near-term work shows the weekday and time ("Wed 3:00 PM"); overdue and later work shows the
+    /// date ("Mon, Nov 16"), since the weekday alone would be ambiguous that far out.
+    var showsDateInsteadOfTime: Bool {
+        self == .overdue || self == .later
+    }
+
     var title: LocalizedStringResource {
         switch self {
         case .overdue: "Overdue"

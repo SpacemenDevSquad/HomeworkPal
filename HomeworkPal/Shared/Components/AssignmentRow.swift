@@ -1,16 +1,36 @@
 import SwiftUI
 
 struct AssignmentRow: View {
+    /// How the due date reads on the right of the row.
+    enum DueDateStyle {
+        /// "Wed 3:00 PM", for work due within the week.
+        case weekdayAndTime
+        /// "Mon, Nov 16", for work further out or already past.
+        case date
+    }
+
     private static let stripeWidth: CGFloat = 4
     private static let courseDotSize: CGFloat = 8
 
+    /// How long a fresh checkmark waits before the assignment is completed. Tapping again in that time
+    /// unchecks it, and lists that hide completed work don't remove the row before the check is seen.
+    private static let completionDelay: Duration = .seconds(1)
+
     let assignment: Assignment
     let isOverdue: Bool
+    var dueDateStyle: DueDateStyle = .weekdayAndTime
+    /// Called to flip the assignment's completed state: after the short delay when checking, right away when unchecking.
     let onToggle: () -> Void
     /// When set, long-pressing the row offers Add to Calendar.
     var onAddToCalendar: (() -> Void)? = nil
 
     private var courseColor: Color { assignment.course.color }
+
+    /// True between checking an open assignment and its completion being saved.
+    @State private var isPendingCompletion = false
+    @State private var completionTask: Task<Void, Never>?
+
+    private var showsCheckmark: Bool { assignment.isCompleted || isPendingCompletion }
 
     // Typed as a key so both titles are localized; a ternary of literals would infer a plain String.
     private var addToCalendarTitle: LocalizedStringKey {
@@ -26,16 +46,30 @@ struct AssignmentRow: View {
 
             checkbox
 
-            VStack(alignment: .leading, spacing: 4) {
-                Text(assignment.title)
-                    .font(.body.weight(.medium))
-                    .foregroundStyle(Theme.primaryText)
-                courseLabel
+            // Everything but the checkbox opens the assignment, so the checkbox keeps its own tap.
+            NavigationLink(value: AssignmentLink(id: assignment.id)) {
+                HStack(spacing: 12) {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(assignment.title)
+                            .font(.body.weight(.medium))
+                            .foregroundStyle(Theme.primaryText)
+                            .multilineTextAlignment(.leading)
+                        courseLabel
+                    }
+
+                    Spacer(minLength: 8)
+
+                    dueDateLabel
+
+                    Image(systemName: "chevron.right")
+                        .font(.caption.weight(.semibold))
+                        .foregroundStyle(Theme.secondaryText)
+                        .accessibilityHidden(true)
+                }
+                .contentShape(.rect)
             }
-
-            Spacer(minLength: 8)
-
-            dueDateLabel
+            .buttonStyle(.plain)
+            .accessibilityElement(children: .combine)
         }
         .padding(12)
         .background(Theme.surface, in: .rect(cornerRadius: Theme.cornerRadius))
@@ -44,7 +78,6 @@ struct AssignmentRow: View {
             radius: Theme.cardShadowRadius,
             y: Theme.cardShadowOffset
         )
-        .accessibilityElement(children: .combine)
         .contextMenu {
             if let onAddToCalendar {
                 Button(action: onAddToCalendar) {
@@ -55,15 +88,41 @@ struct AssignmentRow: View {
     }
 
     private var checkbox: some View {
-        Button(action: onToggle) {
-            Image(systemName: assignment.isCompleted ? "checkmark.circle.fill" : "circle")
+        Button(action: toggleCompletion) {
+            Image(systemName: showsCheckmark ? "checkmark.circle.fill" : "circle")
                 .font(.title2)
                 .foregroundStyle(Theme.primaryText)
+                .contentTransition(.symbolEffect(.replace))
                 .frame(minWidth: Theme.minimumTapTarget, minHeight: Theme.minimumTapTarget)
                 .contentShape(.rect)
         }
         .buttonStyle(.plain)
-        .accessibilityLabel(assignment.isCompleted ? Text("Mark incomplete") : Text("Mark complete"))
+        .animation(.snappy, value: showsCheckmark)
+        .sensoryFeedback(.success, trigger: showsCheckmark) { _, isChecked in isChecked }
+        .accessibilityLabel(showsCheckmark ? Text("Mark incomplete") : Text("Mark complete"))
+    }
+
+    private func toggleCompletion() {
+        // Already saved as complete: unchecking is immediate.
+        if assignment.isCompleted {
+            withAnimation { onToggle() }
+            return
+        }
+        // Checked moments ago and not saved yet: a second tap takes it back.
+        if isPendingCompletion {
+            completionTask?.cancel()
+            completionTask = nil
+            isPendingCompletion = false
+            return
+        }
+        isPendingCompletion = true
+        completionTask = Task { @MainActor in
+            try? await Task.sleep(for: Self.completionDelay)
+            guard !Task.isCancelled else { return }
+            withAnimation { onToggle() }
+            isPendingCompletion = false
+            completionTask = nil
+        }
     }
 
     private var courseLabel: some View {
@@ -84,6 +143,13 @@ struct AssignmentRow: View {
         }
     }
 
+    private var dueDateFormat: Date.FormatStyle {
+        switch dueDateStyle {
+        case .weekdayAndTime: .dateTime.weekday(.abbreviated).hour().minute()
+        case .date: .dateTime.weekday(.abbreviated).month(.abbreviated).day()
+        }
+    }
+
     // Overdue is signalled by an icon and heavier weight, not by color alone.
     private var dueDateLabel: some View {
         HStack(spacing: 4) {
@@ -92,7 +158,7 @@ struct AssignmentRow: View {
                     .foregroundStyle(Theme.accent)
                     .accessibilityLabel(Text("Overdue"))
             }
-            Text(assignment.dueDate, format: .dateTime.weekday(.abbreviated).hour().minute())
+            Text(assignment.dueDate, format: dueDateFormat)
                 .fontWeight(isOverdue ? .semibold : .regular)
                 .foregroundStyle(isOverdue ? Theme.primaryText : Theme.secondaryText)
         }

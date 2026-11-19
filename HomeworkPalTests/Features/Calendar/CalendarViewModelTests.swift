@@ -103,6 +103,34 @@ struct CalendarViewModelTests {
         #expect(viewModel.isShowingCurrentWeek)
     }
 
+    @Test func showWeekJumpsToTheWeekContainingTheDate() {
+        let viewModel = makeViewModel(assignments: [])
+
+        // Wednesday, January 13, 2027 falls in the week starting Sunday, January 10.
+        viewModel.showWeek(containing: calendar.date(from: DateComponents(year: 2027, month: 1, day: 13, hour: 9)) ?? .distantPast)
+
+        #expect(viewModel.weekStart == calendar.date(from: DateComponents(year: 2027, month: 1, day: 10)))
+        #expect(!viewModel.isShowingCurrentWeek)
+    }
+
+    @Test func directionComparesAgainstTheShownWeek() {
+        let viewModel = makeViewModel(assignments: [])
+
+        #expect(viewModel.direction(toWeekContaining: date(day: 25)) == .forward)
+        #expect(viewModel.direction(toWeekContaining: date(day: 3)) == .backward)
+
+        viewModel.showNextWeek()
+        #expect(viewModel.direction(toWeekContaining: now) == .backward)
+    }
+
+    @Test func pickerOpensOnTodayOrTheShownWeeksFirstDay() {
+        let viewModel = makeViewModel(assignments: [])
+        #expect(viewModel.pickerStartDate == date(day: 18))
+
+        viewModel.showNextWeek()
+        #expect(viewModel.pickerStartDate == date(day: 22))
+    }
+
     @Test func weekNavigationCrossesMonthBoundaries() {
         let viewModel = makeViewModel(assignments: [])
 
@@ -158,16 +186,6 @@ struct CalendarViewModelTests {
 
         #expect(viewModel.isOverdue(pastDue))
         #expect(!viewModel.isOverdue(upcoming))
-    }
-
-    @Test func requestCompletionSetsPendingAssignmentWithoutCompleting() {
-        let assignment = Assignment(title: "Essay", course: .english, dueDate: date(day: 19, hour: 9))
-        let viewModel = makeViewModel(assignments: [assignment])
-
-        viewModel.requestCompletion(for: assignment)
-
-        #expect(viewModel.pendingCompletion == assignment)
-        #expect(viewModel.days.flatMap(\.assignments) == [assignment])
     }
 
     @Test func markCompleteRemovesAssignmentFromDay() {
