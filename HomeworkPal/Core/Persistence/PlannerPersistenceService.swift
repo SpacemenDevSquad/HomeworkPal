@@ -16,6 +16,8 @@ protocol PlannerPersistenceService {
     func setCompletion(_ isCompleted: Bool, forAssignmentID assignmentID: Assignment.ID) throws
     /// Records that the assignment's due date was saved to Apple Calendar.
     func markAddedToCalendar(assignmentID: Assignment.ID) throws
+    /// Deletes every course and assignment.
+    func deleteAllData() throws
 }
 
 enum PlannerPersistenceError: LocalizedError {

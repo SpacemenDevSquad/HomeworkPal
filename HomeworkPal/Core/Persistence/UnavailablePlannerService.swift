@@ -26,4 +26,8 @@ struct UnavailablePlannerService: PlannerPersistenceService {
     func markAddedToCalendar(assignmentID: Assignment.ID) throws {
         throw PlannerPersistenceError.storeUnavailable
     }
+
+    func deleteAllData() throws {
+        throw PlannerPersistenceError.storeUnavailable
+    }
 }

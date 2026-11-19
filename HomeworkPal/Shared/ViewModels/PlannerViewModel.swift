@@ -75,6 +75,14 @@ final class PlannerViewModel {
         }
     }
 
+    /// Erases every class, activity, and assignment. Throws rather than using the shared error alert, so the
+    /// caller (Settings' Clear Data) can report the failure in its own UI.
+    func deleteAllData() throws {
+        try persistence.deleteAllData()
+        courses = []
+        assignments = []
+    }
+
     /// Drives the error alert; setting it to `false` dismisses the current error.
     var isShowingError: Bool {
         get { errorMessage != nil }
