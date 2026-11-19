@@ -2,22 +2,9 @@ import SwiftUI
 
 struct CalendarView: View {
     @StateObject private var viewModel: CalendarViewModel
-    @Environment(\.dismiss) private var dismiss
 
-    private let onComplete: (Assignment) -> Void
-    private let onAddedToCalendar: (Assignment) -> Void
-
-    /// - Parameters:
-    ///   - onComplete: Called when an assignment is checked off here, so the owner of the assignments can record it.
-    ///   - onAddedToCalendar: Called when an assignment's event is saved to Apple Calendar here, for the same reason.
-    init(
-        assignments: [Assignment] = Assignment.sampleData,
-        onComplete: @escaping (Assignment) -> Void = { _ in },
-        onAddedToCalendar: @escaping (Assignment) -> Void = { _ in }
-    ) {
-        _viewModel = StateObject(wrappedValue: CalendarViewModel(assignments: assignments))
-        self.onComplete = onComplete
-        self.onAddedToCalendar = onAddedToCalendar
+    init(planner: PlannerViewModel) {
+        _viewModel = StateObject(wrappedValue: CalendarViewModel(planner: planner))
     }
 
     var body: some View {
@@ -43,10 +30,7 @@ struct CalendarView: View {
             .sheet(item: $viewModel.assignmentToAddToCalendar, onDismiss: viewModel.presentNextQueuedCalendarEvent) { assignment in
                 AddToCalendarSheet(
                     assignment: assignment,
-                    onSaved: {
-                        viewModel.markAddedToCalendar(assignment)
-                        onAddedToCalendar(assignment)
-                    },
+                    onSaved: { viewModel.markAddedToCalendar(assignment) },
                     onCancelled: viewModel.cancelQueuedCalendarEvents
                 )
                 // Apple's form is embedded rather than presented, so it can't block a swipe-down itself;
@@ -66,7 +50,6 @@ struct CalendarView: View {
             .alert("Mark as Complete?", item: $viewModel.pendingCompletion) { assignment in
                 Button("Complete") {
                     withAnimation { viewModel.markComplete(assignment) }
-                    onComplete(assignment)
                 }
                 // Marks Complete as the default action so the system shows it with greater prominence.
                 .keyboardShortcut(.defaultAction)
@@ -78,28 +61,6 @@ struct CalendarView: View {
     }
 
     private var titleHeader: some View {
-        VStack(alignment: .leading, spacing: 8) {
-            backButton
-            titleRow
-        }
-        .frame(maxWidth: .infinity, alignment: .leading)
-    }
-
-    // The navigation bar is hidden, so the system back button is replaced with this one.
-    private var backButton: some View {
-        Button {
-            dismiss()
-        } label: {
-            Label("Dashboard", systemImage: "chevron.left")
-                .frame(minHeight: Theme.minimumTapTarget)
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .foregroundStyle(Theme.primaryText)
-        .accessibilityLabel(Text("Back to Dashboard"))
-    }
-
-    private var titleRow: some View {
         HStack {
             Text("Calendar")
                 .font(.largeTitle.bold())
@@ -159,10 +120,12 @@ struct CalendarView: View {
     }
 }
 
+#if DEBUG
 #Preview {
-    CalendarView()
+    CalendarView(planner: PlannerViewModel())
 }
 
 #Preview("Empty") {
-    CalendarView(assignments: [])
+    CalendarView(planner: PlannerViewModel(assignments: []))
 }
+#endif

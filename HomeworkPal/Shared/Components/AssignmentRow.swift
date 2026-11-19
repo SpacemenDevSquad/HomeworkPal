@@ -100,6 +100,7 @@ struct AssignmentRow: View {
     }
 }
 
+#if DEBUG
 #Preview {
     VStack {
         AssignmentRow(
@@ -122,3 +123,4 @@ struct AssignmentRow: View {
     .padding()
     .background(Theme.background)
 }
+#endif

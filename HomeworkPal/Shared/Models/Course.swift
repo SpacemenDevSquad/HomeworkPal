@@ -1,7 +1,9 @@
 import Foundation
 
 /// A class or extracurricular activity that assignments belong to.
-struct Course: Identifiable, Hashable, Codable, Sendable {
+///
+/// `nonisolated` because it's plain data that SwiftData records convert to and from off the main actor.
+nonisolated struct Course: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     var name: String
     /// Six-digit RGB hex string, kept as plain data so the model stays `Codable` and UI-framework free.
@@ -16,6 +18,8 @@ struct Course: Identifiable, Hashable, Codable, Sendable {
 
 // MARK: - Sample Data
 
+#if DEBUG
+/// Preview and test data only. Debug-only so it can never ship in a release build.
 extension Course {
     static let english = Course(name: "English", colorHex: "#0088FF")
     static let chemistry = Course(name: "Chemistry", colorHex: "#FF8D28")
@@ -26,3 +30,4 @@ extension Course {
 
     static let sampleData: [Course] = [english, chemistry, biology, calculus, soccer, theater]
 }
+#endif

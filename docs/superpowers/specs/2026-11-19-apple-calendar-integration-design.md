@@ -52,8 +52,8 @@ pre-filled sheet. Once added, the item reads **Add to Calendar Again**.
 
 - An assignment is marked added only when the student taps **Add** in Apple's sheet.
 - Rows show a small calendar icon for added assignments, with the accessibility label "Added to Calendar".
-- Known limits: without calendar access the app cannot detect if the event is later deleted, and the status
-  is in memory only until persistence exists.
+- Known limits: without calendar access the app cannot detect if the event is later deleted.
+- The status is saved with the assignment (`AssignmentRecord.isAddedToCalendar`) through `PlannerViewModel.markAddedToCalendar`.
 
 ### Add all of a day's assignments (Calendar screen)
 
@@ -85,7 +85,7 @@ pre-filled sheet. Once added, the item reads **Add to Calendar Again**.
 | `Features/Dashboard/ViewModels/DashboardViewModel.swift` | `addAssignment(_:addToCalendar:)` queues the assignment when the switch is on; `presentQueuedCalendarEvent()` moves the queued assignment to `assignmentToAddToCalendar`; `requestCalendarEvent(for:)`; `markAddedToCalendar(_:)`. |
 | `Features/Dashboard/Views/DashboardView.swift` | Add sheet's `onDismiss` calls `presentQueuedCalendarEvent()`; `.sheet(item: $viewModel.assignmentToAddToCalendar)` presents `AddToCalendarSheet`; rows get the long-press action; passes `markAddedToCalendar` to `CalendarView`. |
 | `Features/Calendar/ViewModels/CalendarViewModel.swift` | `assignmentToAddToCalendar`, `requestCalendarEvent(for:)`, `markAddedToCalendar(_:)`. |
-| `Features/Calendar/Views/CalendarView.swift`, `CalendarDayRow.swift` | Present the sheet; rows get the long-press action; new `onAddedToCalendar` callback beside `onComplete`. |
+| `Features/Calendar/Views/CalendarView.swift`, `CalendarDayRow.swift` | Present the sheet; rows get the long-press action. |
 | `Shared/Components/AssignmentRow.swift` | Optional `onAddToCalendar` action that adds the context menu; calendar icon when added. |
 
 ### Data flow
@@ -95,8 +95,7 @@ pre-filled sheet. Once added, the item reads **Add to Calendar Again**.
   Waiting for dismissal avoids presenting one sheet while another is still closing.
 - **Row action:** row → `requestCalendarEvent(for:)` → `assignmentToAddToCalendar` drives `.sheet(item:)`
   → on save, `markAddedToCalendar`.
-- **Calendar screen:** `markAddedToCalendar` also calls `onAddedToCalendar`, which Dashboard wires to its own
-  `markAddedToCalendar`, keeping both screens in step (same pattern as `onComplete`).
+- **Both screens:** `markAddedToCalendar` goes through the shared `PlannerViewModel`, which saves it and updates every tab.
 
 ### Not needed
 
@@ -129,4 +128,3 @@ Swift Testing unit tests (written, run by the developer):
 - Dedicated "HomeworkPal" calendar, automatic sync, updating or removing events on edit or completion (MVP2).
 - Reminders and alerts (MVP2).
 - Assignment Detail screen with Calendar status.
-- Persisting assignments and the added status.

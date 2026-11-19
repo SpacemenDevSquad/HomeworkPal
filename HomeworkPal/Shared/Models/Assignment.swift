@@ -1,7 +1,9 @@
 import Foundation
 
 /// A single item with a due date, belonging to a class or activity.
-struct Assignment: Identifiable, Hashable, Codable, Sendable {
+///
+/// `nonisolated` because it's plain data that SwiftData records convert to and from off the main actor.
+nonisolated struct Assignment: Identifiable, Hashable, Codable, Sendable {
     let id: UUID
     var title: String
     var course: Course
@@ -30,6 +32,8 @@ struct Assignment: Identifiable, Hashable, Codable, Sendable {
 
 // MARK: - Sample Data
 
+#if DEBUG
+/// Preview and test data only. Debug-only so it can never ship in a release build.
 extension Assignment {
     static var sampleData: [Assignment] {
         let calendar = Calendar.current
@@ -53,3 +57,4 @@ extension Assignment {
         ]
     }
 }
+#endif

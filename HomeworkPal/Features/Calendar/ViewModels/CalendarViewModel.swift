@@ -5,7 +5,6 @@ import Foundation
 final class CalendarViewModel: ObservableObject {
     private static let daysInWeek = 7
 
-    @Published private(set) var assignments: [Assignment]
     /// The first day of the week being shown, respecting the locale's first weekday.
     @Published private(set) var weekStart: Date
     /// The day whose assignments are expanded. Only one day is expanded at a time.
@@ -20,16 +19,17 @@ final class CalendarViewModel: ObservableObject {
 
     /// Assignments still waiting for their turn in Apple's sheet during Add All, in due-date order.
     private var queuedCalendarAssignments: [Assignment] = []
+    private let planner: PlannerViewModel
     private let calendar: Calendar
     /// Read on demand rather than stored, so "today" stays correct if the app stays open past midnight.
     private let currentDate: () -> Date
 
     init(
-        assignments: [Assignment] = Assignment.sampleData,
+        planner: PlannerViewModel,
         calendar: Calendar = .current,
         currentDate: @escaping () -> Date = { .now }
     ) {
-        self.assignments = assignments
+        self.planner = planner
         self.calendar = calendar
         self.currentDate = currentDate
         self.weekStart = Self.startOfWeek(containing: currentDate(), calendar: calendar)
@@ -37,7 +37,7 @@ final class CalendarViewModel: ObservableObject {
 
     /// The seven days of the shown week, each with its open assignments.
     var days: [CalendarDay] {
-        let openAssignments = assignments
+        let openAssignments = planner.assignments
             .filter { !$0.isCompleted }
             .sorted { $0.dueDate < $1.dueDate }
         let assignmentsByDay = Dictionary(grouping: openAssignments) { calendar.startOfDay(for: $0.dueDate) }
@@ -92,8 +92,7 @@ final class CalendarViewModel: ObservableObject {
     }
 
     func markComplete(_ assignment: Assignment) {
-        guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
-        assignments[index].isCompleted = true
+        planner.markComplete(assignment)
     }
 
     func requestCalendarEvent(for assignment: Assignment) {
@@ -101,8 +100,7 @@ final class CalendarViewModel: ObservableObject {
     }
 
     func markAddedToCalendar(_ assignment: Assignment) {
-        guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
-        assignments[index].isAddedToCalendar = true
+        planner.markAddedToCalendar(assignment)
     }
 
     /// Asks the student to confirm before adding the day's remaining assignments. Days with nothing left to add are ignored.
@@ -124,7 +122,7 @@ final class CalendarViewModel: ObservableObject {
         // Skip anything completed or added since Add All started.
         while let next = queuedCalendarAssignments.first {
             queuedCalendarAssignments.removeFirst()
-            if let current = assignments.first(where: { $0.id == next.id }), !current.isCompleted, !current.isAddedToCalendar {
+            if let current = planner.assignments.first(where: { $0.id == next.id }), !current.isCompleted, !current.isAddedToCalendar {
                 assignmentToAddToCalendar = current
                 return
             }

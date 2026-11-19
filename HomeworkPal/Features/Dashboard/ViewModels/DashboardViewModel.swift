@@ -11,13 +11,9 @@ final class DashboardViewModel: ObservableObject {
         var id: DueBucket { bucket }
     }
 
-    @Published private(set) var assignments: [Assignment]
-    @Published private(set) var courses: [Course]
-
     /// The assignment awaiting confirmation before it's checked off. Drives the confirmation alert.
     @Published var pendingCompletion: Assignment?
     @Published var isAddingAssignment = false
-    @Published var isShowingCalendar = false
     /// The assignment Apple's Add Event sheet is open for. Drives the calendar sheet.
     @Published var assignmentToAddToCalendar: Assignment?
 
@@ -25,14 +21,19 @@ final class DashboardViewModel: ObservableObject {
     /// can't be presented while another is still dismissing.
     private var queuedCalendarAssignment: Assignment?
 
-    init(assignments: [Assignment] = Assignment.sampleData, courses: [Course] = Course.sampleData) {
-        self.assignments = assignments
-        self.courses = courses
+    private let planner: PlannerViewModel
+
+    init(planner: PlannerViewModel) {
+        self.planner = planner
+    }
+
+    var courses: [Course] {
+        planner.courses
     }
 
     /// Open assignments grouped into time buckets, soonest first. Empty buckets are omitted.
     var sections: [Section] {
-        let openAssignments = assignments
+        let openAssignments = planner.assignments
             .filter { !$0.isCompleted }
             .sorted { $0.dueDate < $1.dueDate }
         let assignmentsByBucket = Dictionary(grouping: openAssignments) { DueBucket.bucket(for: $0.dueDate) }
@@ -53,23 +54,18 @@ final class DashboardViewModel: ObservableObject {
     }
 
     func markComplete(_ assignment: Assignment) {
-        guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
-        assignments[index].isCompleted = true
+        planner.markComplete(assignment)
     }
 
     func startAddingAssignment() {
         isAddingAssignment = true
     }
 
-    func showCalendar() {
-        isShowingCalendar = true
-    }
-
     func addAssignment(_ assignment: Assignment, addToCalendar: Bool) {
-        assignments.append(assignment)
-        if addToCalendar {
-            queuedCalendarAssignment = assignment
-        }
+        planner.addAssignment(assignment)
+        // Only offer the calendar if the assignment was actually saved; a failed save is reported by the planner.
+        guard addToCalendar, planner.assignments.contains(where: { $0.id == assignment.id }) else { return }
+        queuedCalendarAssignment = assignment
     }
 
     /// Opens Apple's Add Event sheet for the assignment queued by `addAssignment(_:addToCalendar:)`, if any.
@@ -84,7 +80,6 @@ final class DashboardViewModel: ObservableObject {
     }
 
     func markAddedToCalendar(_ assignment: Assignment) {
-        guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
-        assignments[index].isAddedToCalendar = true
+        planner.markAddedToCalendar(assignment)
     }
 }

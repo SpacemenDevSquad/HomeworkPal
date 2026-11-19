@@ -121,8 +121,9 @@ struct CalendarDayRow: View {
     }
 }
 
+#if DEBUG
 #Preview {
-    let viewModel = CalendarViewModel()
+    let viewModel = CalendarViewModel(planner: PlannerViewModel())
     ScrollView {
         VStack(spacing: 10) {
             ForEach(viewModel.days) { day in
@@ -133,3 +134,4 @@ struct CalendarDayRow: View {
     }
     .background(Theme.background)
 }
+#endif
