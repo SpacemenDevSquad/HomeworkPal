@@ -9,6 +9,7 @@ final class AddAssignmentViewModel: ObservableObject {
     @Published var title = ""
     @Published var selectedCourseID: Course.ID?
     @Published var dueDate: Date
+    @Published var addToCalendar = false
 
     let courses: [Course]
 

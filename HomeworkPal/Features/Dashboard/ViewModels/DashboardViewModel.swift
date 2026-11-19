@@ -18,6 +18,12 @@ final class DashboardViewModel: ObservableObject {
     @Published var pendingCompletion: Assignment?
     @Published var isAddingAssignment = false
     @Published var isShowingCalendar = false
+    /// The assignment Apple's Add Event sheet is open for. Drives the calendar sheet.
+    @Published var assignmentToAddToCalendar: Assignment?
+
+    /// A just-added assignment waiting for the New Assignment sheet to finish closing, since one sheet
+    /// can't be presented while another is still dismissing.
+    private var queuedCalendarAssignment: Assignment?
 
     init(assignments: [Assignment] = Assignment.sampleData, courses: [Course] = Course.sampleData) {
         self.assignments = assignments
@@ -59,7 +65,26 @@ final class DashboardViewModel: ObservableObject {
         isShowingCalendar = true
     }
 
-    func addAssignment(_ assignment: Assignment) {
+    func addAssignment(_ assignment: Assignment, addToCalendar: Bool) {
         assignments.append(assignment)
+        if addToCalendar {
+            queuedCalendarAssignment = assignment
+        }
+    }
+
+    /// Opens Apple's Add Event sheet for the assignment queued by `addAssignment(_:addToCalendar:)`, if any.
+    func presentQueuedCalendarEvent() {
+        guard let queuedCalendarAssignment else { return }
+        assignmentToAddToCalendar = queuedCalendarAssignment
+        self.queuedCalendarAssignment = nil
+    }
+
+    func requestCalendarEvent(for assignment: Assignment) {
+        assignmentToAddToCalendar = assignment
+    }
+
+    func markAddedToCalendar(_ assignment: Assignment) {
+        guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
+        assignments[index].isAddedToCalendar = true
     }
 }

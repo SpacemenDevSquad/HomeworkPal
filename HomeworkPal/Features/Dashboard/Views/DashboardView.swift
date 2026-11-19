@@ -38,8 +38,13 @@ struct DashboardView: View {
                     .accessibilityLabel(Text("Add Assignment"))
                 }
             }
-            .sheet(isPresented: $viewModel.isAddingAssignment) {
+            .sheet(isPresented: $viewModel.isAddingAssignment, onDismiss: viewModel.presentQueuedCalendarEvent) {
                 AddAssignmentView(courses: viewModel.courses, onSave: viewModel.addAssignment)
+            }
+            .sheet(item: $viewModel.assignmentToAddToCalendar) { assignment in
+                AddToCalendarSheet(assignment: assignment) {
+                    viewModel.markAddedToCalendar(assignment)
+                }
             }
             // Full screen rather than pushed, because Calendar has its own navigation stack and back button.
             .fullScreenCover(isPresented: $viewModel.isShowingCalendar) {
@@ -72,9 +77,12 @@ struct DashboardView: View {
             ForEach(viewModel.sections) { section in
                 Section {
                     ForEach(section.assignments) { assignment in
-                        AssignmentRow(assignment: assignment, isOverdue: section.bucket == .overdue) {
-                            viewModel.requestCompletion(for: assignment)
-                        }
+                        AssignmentRow(
+                            assignment: assignment,
+                            isOverdue: section.bucket == .overdue,
+                            onToggle: { viewModel.requestCompletion(for: assignment) },
+                            onAddToCalendar: { viewModel.requestCalendarEvent(for: assignment) }
+                        )
                     }
                 } header: {
                     SectionHeader(bucket: section.bucket, count: section.assignments.count)
