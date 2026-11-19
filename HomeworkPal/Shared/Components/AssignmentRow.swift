@@ -7,8 +7,15 @@ struct AssignmentRow: View {
     let assignment: Assignment
     let isOverdue: Bool
     let onToggle: () -> Void
+    /// When set, long-pressing the row offers Add to Calendar.
+    var onAddToCalendar: (() -> Void)? = nil
 
     private var courseColor: Color { assignment.course.color }
+
+    // Typed as a key so both titles are localized; a ternary of literals would infer a plain String.
+    private var addToCalendarTitle: LocalizedStringKey {
+        assignment.isAddedToCalendar ? "Add to Calendar Again" : "Add to Calendar"
+    }
 
     var body: some View {
         HStack(spacing: 12) {
@@ -38,6 +45,13 @@ struct AssignmentRow: View {
             y: Theme.cardShadowOffset
         )
         .accessibilityElement(children: .combine)
+        .contextMenu {
+            if let onAddToCalendar {
+                Button(action: onAddToCalendar) {
+                    Label(addToCalendarTitle, systemImage: "calendar.badge.plus")
+                }
+            }
+        }
     }
 
     private var checkbox: some View {
@@ -61,6 +75,12 @@ struct AssignmentRow: View {
             Text(assignment.course.name)
                 .font(.caption)
                 .foregroundStyle(Theme.secondaryText)
+            if assignment.isAddedToCalendar {
+                Image(systemName: "calendar")
+                    .font(.caption)
+                    .foregroundStyle(Theme.secondaryText)
+                    .accessibilityLabel(Text("Added to Calendar"))
+            }
         }
     }
 
@@ -91,6 +111,12 @@ struct AssignmentRow: View {
             assignment: Assignment(title: "Reading response", course: .english, dueDate: .now),
             isOverdue: true,
             onToggle: {}
+        )
+        AssignmentRow(
+            assignment: Assignment(title: "Problem set 6", course: .calculus, dueDate: .now, isAddedToCalendar: true),
+            isOverdue: false,
+            onToggle: {},
+            onAddToCalendar: {}
         )
     }
     .padding()
