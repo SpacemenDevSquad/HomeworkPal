@@ -17,6 +17,11 @@ struct CalendarDay: Identifiable, Sendable {
         assignments.isEmpty
     }
 
+    /// Assignments that "Add All to Calendar" would still add, so already-added ones aren't duplicated.
+    var assignmentsNotAddedToCalendar: [Assignment] {
+        assignments.filter { !$0.isAddedToCalendar }
+    }
+
     var isBusy: Bool {
         assignments.count >= Self.busyThreshold
     }

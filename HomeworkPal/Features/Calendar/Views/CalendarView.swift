@@ -1,8 +1,10 @@
 import SwiftUI
+import UIKit
 
 struct CalendarView: View {
     @StateObject private var viewModel: CalendarViewModel
     @Environment(\.dismiss) private var dismiss
+    @Environment(\.openURL) private var openURL
 
     private let onComplete: (Assignment) -> Void
     private let onAddedToCalendar: (Assignment) -> Void
@@ -48,6 +50,27 @@ struct CalendarView: View {
                 // without this, a swipe would silently discard the student's edits.
                 .interactiveDismissDisabled()
             }
+            .alert("Add All Events?", item: $viewModel.dayPendingAddAll) { day in
+                Button("Add") {
+                    Task { await addAllToCalendar(on: day) }
+                }
+                .keyboardShortcut(.defaultAction)
+                Button("Cancel", role: .cancel) {}
+            } message: { day in
+                // Automatic grammar agreement turns "assignment" plural when the count isn't 1.
+                Text("^[\(day.assignmentsNotAddedToCalendar.count) assignment](inflect: true) will be added to your calendar. HomeworkPal can only add events. It can't see your calendar.")
+            }
+            .alert("Calendar Access Is Off", isPresented: $viewModel.isShowingCalendarAccessDenied) {
+                Button("Open Settings", action: openSettings)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("To add assignments, allow HomeworkPal to add events in Settings.")
+            }
+            .alert("Couldn't Add to Calendar", isPresented: $viewModel.isShowingAddAllFailure) {
+                Button("OK", role: .cancel) {}
+            } message: {
+                Text("Some assignments weren't added. Please try again.")
+            }
             .alert("Mark as Complete?", item: $viewModel.pendingCompletion) { assignment in
                 Button("Complete") {
                     withAnimation { viewModel.markComplete(assignment) }
@@ -60,6 +83,16 @@ struct CalendarView: View {
                 Text("\"\(assignment.title)\" will be checked off your list.")
             }
         }
+    }
+
+    private func addAllToCalendar(on day: CalendarDay) async {
+        let addedAssignments = await viewModel.addAllToCalendar(on: day)
+        addedAssignments.forEach(onAddedToCalendar)
+    }
+
+    private func openSettings() {
+        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
+        openURL(settingsURL)
     }
 
     private var titleHeader: some View {

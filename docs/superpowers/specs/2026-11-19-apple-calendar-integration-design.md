@@ -13,7 +13,8 @@ their classes, practices, and shifts — without HomeworkPal ever being able to 
 
 | Decision | Choice | Reason |
 |---|---|---|
-| Permission model | None. Use Apple's system Add Event sheet (`EKEventEditViewController`). | Keeps the promise that HomeworkPal cannot see other events. The sheet runs out of process and needs no calendar access. |
+| Permission model (single assignment) | None. Use Apple's system Add Event sheet (`EKEventEditViewController`). | Keeps the promise that HomeworkPal cannot see other events. The sheet runs out of process and needs no calendar access. |
+| Permission model (whole day) | Add-only (write-only) access, requested the first time a student uses Add All | The system sheet saves one event per confirmation, so adding a day at once needs to save directly. Add-only access still can't read the calendar. |
 | Dedicated "HomeworkPal" calendar | Deferred to MVP2 | Creating a calendar requires full access, which MVP2 requests for automatic sync. |
 | Pre-permission explanation screen | Dropped | There is no permission prompt to explain. |
 | "Open in Calendar" confirmation | Dropped | The student has just seen and confirmed the event in Apple's sheet. |
@@ -53,6 +54,15 @@ pre-filled sheet. Once added, the item reads **Add to Calendar Again**.
 - Rows show a small calendar icon for added assignments, with the accessibility label "Added to Calendar".
 - Known limits: without calendar access the app cannot detect if the event is later deleted, and the status
   is in memory only until persistence exists.
+
+### Add all of a day's assignments (Calendar screen)
+
+- Long-pressing a day card, collapsed or expanded, shows **Add All to Calendar** when the day has assignments not yet added.
+- A confirmation, **"Add All Events?"**, says how many will be added and that HomeworkPal can only add events and can't see the calendar.
+- The first time, iOS asks for add-only access (`NSCalendarsWriteOnlyAccessUsageDescription`).
+- On confirm, every not-yet-added assignment that day is saved at once to the default calendar with the same event contents, and marked added (Upcoming too). Already-added ones are skipped.
+- Denied access shows an alert with **Open Settings**. A failed save keeps the events that succeeded and shows an error alert.
+- Single assignments keep using the long-press on the row and Apple's sheet.
 
 ## Architecture
 

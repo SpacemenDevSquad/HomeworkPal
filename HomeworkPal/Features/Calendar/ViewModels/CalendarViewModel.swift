@@ -1,9 +1,11 @@
 import Combine
 import Foundation
+import os
 
 @MainActor
 final class CalendarViewModel: ObservableObject {
     private static let daysInWeek = 7
+    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HomeworkPal", category: "Calendar")
 
     @Published private(set) var assignments: [Assignment]
     /// The first day of the week being shown, respecting the locale's first weekday.
@@ -15,18 +17,25 @@ final class CalendarViewModel: ObservableObject {
     @Published var pendingCompletion: Assignment?
     /// The assignment Apple's Add Event sheet is open for. Drives the calendar sheet.
     @Published var assignmentToAddToCalendar: Assignment?
+    /// The day awaiting confirmation before all its assignments are added to Calendar. Drives the confirmation alert.
+    @Published var dayPendingAddAll: CalendarDay?
+    @Published var isShowingCalendarAccessDenied = false
+    @Published var isShowingAddAllFailure = false
 
     private let calendar: Calendar
+    private let calendarEventService: any CalendarEventServiceProtocol
     /// Read on demand rather than stored, so "today" stays correct if the app stays open past midnight.
     private let currentDate: () -> Date
 
     init(
         assignments: [Assignment] = Assignment.sampleData,
         calendar: Calendar = .current,
+        calendarEventService: any CalendarEventServiceProtocol = CalendarEventService(),
         currentDate: @escaping () -> Date = { .now }
     ) {
         self.assignments = assignments
         self.calendar = calendar
+        self.calendarEventService = calendarEventService
         self.currentDate = currentDate
         self.weekStart = Self.startOfWeek(containing: currentDate(), calendar: calendar)
     }
@@ -99,6 +108,48 @@ final class CalendarViewModel: ObservableObject {
     func markAddedToCalendar(_ assignment: Assignment) {
         guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
         assignments[index].isAddedToCalendar = true
+    }
+
+    /// Asks the student to confirm before adding the day's remaining assignments. Days with nothing left to add are ignored.
+    func requestAddAll(for day: CalendarDay) {
+        guard !day.assignmentsNotAddedToCalendar.isEmpty else { return }
+        dayPendingAddAll = day
+    }
+
+    /// Adds every assignment on the day that isn't in Calendar yet, in one go.
+    /// - Returns: The assignments that were added, so the owner of the assignments can record them.
+    func addAllToCalendar(on day: CalendarDay) async -> [Assignment] {
+        // Re-read the day so anything added or completed since the confirmation was shown is respected.
+        let assignmentsToAdd = days.first { $0.id == day.id }?.assignmentsNotAddedToCalendar ?? []
+        guard !assignmentsToAdd.isEmpty, await hasAddOnlyAccess() else { return [] }
+
+        var addedAssignments: [Assignment] = []
+        for assignment in assignmentsToAdd {
+            do {
+                try calendarEventService.save(assignment.calendarEventDetails)
+                markAddedToCalendar(assignment)
+                addedAssignments.append(assignment)
+            } catch {
+                // Keep going: one failed event shouldn't stop the rest of the day from being added.
+                Self.logger.error("Couldn't save calendar event: \(error.localizedDescription, privacy: .public)")
+                isShowingAddAllFailure = true
+            }
+        }
+        return addedAssignments
+    }
+
+    private func hasAddOnlyAccess() async -> Bool {
+        do {
+            let isGranted = try await calendarEventService.requestAddOnlyAccess()
+            if !isGranted {
+                isShowingCalendarAccessDenied = true
+            }
+            return isGranted
+        } catch {
+            Self.logger.error("Calendar access request failed: \(error.localizedDescription, privacy: .public)")
+            isShowingAddAllFailure = true
+            return false
+        }
     }
 
     private func moveWeek(by weekCount: Int) {

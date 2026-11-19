@@ -62,6 +62,15 @@ struct CalendarDayRow: View {
         .accessibilityElement(children: .combine)
         .accessibilityAddTraits(day.isToday ? .isSelected : [])
         .accessibilityHint(isExpanded ? Text("Hides assignments") : Text("Shows assignments"))
+        .contextMenu {
+            if !day.assignmentsNotAddedToCalendar.isEmpty {
+                Button {
+                    viewModel.requestAddAll(for: day)
+                } label: {
+                    Label("Add All to Calendar", systemImage: "calendar.badge.plus")
+                }
+            }
+        }
     }
 
     // Today is marked with an accent fill plus bold text, so color is not the only signal.
