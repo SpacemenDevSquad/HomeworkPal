@@ -2,6 +2,7 @@ import Foundation
 import Testing
 @testable import HomeworkPal
 
+@MainActor
 struct AssignmentCalendarEventTests {
     private let dueDate = Date(timeIntervalSinceReferenceDate: 815_000_000)
 

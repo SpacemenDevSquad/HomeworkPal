@@ -45,6 +45,9 @@ struct DashboardView: View {
                 AddToCalendarSheet(assignment: assignment) {
                     viewModel.markAddedToCalendar(assignment)
                 }
+                // Apple's form is embedded rather than presented, so it can't block a swipe-down itself;
+                // without this, a swipe would silently discard the student's edits.
+                .interactiveDismissDisabled()
             }
             // Full screen rather than pushed, because Calendar has its own navigation stack and back button.
             .fullScreenCover(isPresented: $viewModel.isShowingCalendar) {

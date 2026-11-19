@@ -44,6 +44,9 @@ struct CalendarView: View {
                     viewModel.markAddedToCalendar(assignment)
                     onAddedToCalendar(assignment)
                 }
+                // Apple's form is embedded rather than presented, so it can't block a swipe-down itself;
+                // without this, a swipe would silently discard the student's edits.
+                .interactiveDismissDisabled()
             }
             .alert("Mark as Complete?", item: $viewModel.pendingCompletion) { assignment in
                 Button("Complete") {
