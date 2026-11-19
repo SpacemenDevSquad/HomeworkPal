@@ -27,6 +27,12 @@ struct AddAssignmentViewModelTests {
         #expect(viewModel.makeAssignment() == nil)
     }
 
+    @Test func addToCalendarIsOffByDefault() {
+        let viewModel = AddAssignmentViewModel(courses: courses)
+
+        #expect(!viewModel.addToCalendar)
+    }
+
     @Test func noCoursesCannotBeSaved() {
         let viewModel = AddAssignmentViewModel(courses: [])
         viewModel.title = "Lab report"

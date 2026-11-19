@@ -12,7 +12,13 @@ final class CalendarViewModel: ObservableObject {
 
     /// The assignment awaiting confirmation before it's checked off. Drives the confirmation alert.
     @Published var pendingCompletion: Assignment?
+    /// The assignment Apple's Add Event sheet is open for. Drives the calendar sheet.
+    @Published var assignmentToAddToCalendar: Assignment?
+    /// The day awaiting confirmation before all its assignments are added to Calendar. Drives the confirmation alert.
+    @Published var dayPendingAddAll: CalendarDay?
 
+    /// Assignments still waiting for their turn in Apple's sheet during Add All, in due-date order.
+    private var queuedCalendarAssignments: [Assignment] = []
     private let planner: PlannerViewModel
     private let calendar: Calendar
     /// Read on demand rather than stored, so "today" stays correct if the app stays open past midnight.
@@ -87,6 +93,45 @@ final class CalendarViewModel: ObservableObject {
 
     func markComplete(_ assignment: Assignment) {
         planner.markComplete(assignment)
+    }
+
+    func requestCalendarEvent(for assignment: Assignment) {
+        assignmentToAddToCalendar = assignment
+    }
+
+    func markAddedToCalendar(_ assignment: Assignment) {
+        planner.markAddedToCalendar(assignment)
+    }
+
+    /// Asks the student to confirm before adding the day's remaining assignments. Days with nothing left to add are ignored.
+    func requestAddAll(for day: CalendarDay) {
+        guard !day.assignmentsNotAddedToCalendar.isEmpty else { return }
+        dayPendingAddAll = day
+    }
+
+    /// Starts Add All: Apple's sheet opens for each of the day's not-yet-added assignments, one at a time.
+    func addAllToCalendar(on day: CalendarDay) {
+        // Re-read the day so anything added or completed since the confirmation was shown is respected.
+        queuedCalendarAssignments = days.first { $0.id == day.id }?.assignmentsNotAddedToCalendar ?? []
+        presentNextQueuedCalendarEvent()
+    }
+
+    /// Opens Apple's sheet for the next queued assignment once the previous sheet has closed.
+    func presentNextQueuedCalendarEvent() {
+        guard assignmentToAddToCalendar == nil else { return }
+        // Skip anything completed or added since Add All started.
+        while let next = queuedCalendarAssignments.first {
+            queuedCalendarAssignments.removeFirst()
+            if let current = planner.assignments.first(where: { $0.id == next.id }), !current.isCompleted, !current.isAddedToCalendar {
+                assignmentToAddToCalendar = current
+                return
+            }
+        }
+    }
+
+    /// Cancel in Apple's sheet ends the whole Add All run rather than skipping to the next assignment.
+    func cancelQueuedCalendarEvents() {
+        queuedCalendarAssignments.removeAll()
     }
 
     private func moveWeek(by weekCount: Int) {

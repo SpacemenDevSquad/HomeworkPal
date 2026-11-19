@@ -16,7 +16,7 @@ struct RootTabView: View {
                 ActivitiesView(planner: planner)
             }
             Tab("Settings", systemImage: "gearshape") {
-                SettingsView()
+                SettingsView(planner: planner)
             }
         }
         // Shown here so a failed save is reported no matter which tab it happened in.

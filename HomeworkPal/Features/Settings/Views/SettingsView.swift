@@ -3,8 +3,8 @@ import SwiftUI
 struct SettingsView: View {
     @StateObject private var viewModel: SettingsViewModel
 
-    init(viewModel: SettingsViewModel = SettingsViewModel()) {
-        _viewModel = StateObject(wrappedValue: viewModel)
+    init(planner: PlannerViewModel) {
+        _viewModel = StateObject(wrappedValue: SettingsViewModel(userDataService: UserDataService(planner: planner)))
     }
 
     var body: some View {
@@ -133,6 +133,8 @@ private struct ExternalLinkRow: View {
     }
 }
 
+#if DEBUG
 #Preview {
-    SettingsView()
+    SettingsView(planner: PlannerViewModel())
 }
+#endif

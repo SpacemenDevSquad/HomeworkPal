@@ -62,6 +62,31 @@ struct SwiftDataPlannerServiceTests {
         #expect(saved.isCompleted)
     }
 
+    @Test func addedToCalendarIsSaved() throws {
+        let (service, container) = try makeService()
+        let essay = Assignment(title: "Essay", course: english, dueDate: .now)
+        try service.insertCourse(english)
+        try service.insertAssignment(essay)
+
+        try service.markAddedToCalendar(assignmentID: essay.id)
+
+        let relaunched = try SwiftDataPlannerService(container: container).fetchPlanner()
+        let saved = try #require(relaunched.assignments.first)
+        #expect(saved.isAddedToCalendar)
+    }
+
+    @Test func deleteAllDataRemovesEverything() throws {
+        let (service, container) = try makeService()
+        try service.insertCourse(english)
+        try service.insertAssignment(Assignment(title: "Essay", course: english, dueDate: .now))
+
+        try service.deleteAllData()
+
+        let relaunched = try SwiftDataPlannerService(container: container).fetchPlanner()
+        #expect(relaunched.courses.isEmpty)
+        #expect(relaunched.assignments.isEmpty)
+    }
+
     @Test func assignmentForUnknownCourseIsRejected() throws {
         let (service, _) = try makeService()
 

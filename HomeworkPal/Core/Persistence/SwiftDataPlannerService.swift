@@ -55,10 +55,32 @@ final class SwiftDataPlannerService: PlannerPersistenceService {
     }
 
     func setCompletion(_ isCompleted: Bool, forAssignmentID assignmentID: Assignment.ID) throws {
+        guard let record = try assignmentRecord(withID: assignmentID) else { return }
+        record.isCompleted = isCompleted
+        try save()
+    }
+
+    func markAddedToCalendar(assignmentID: Assignment.ID) throws {
+        guard let record = try assignmentRecord(withID: assignmentID) else { return }
+        record.isAddedToCalendar = true
+        try save()
+    }
+
+    private func assignmentRecord(withID assignmentID: Assignment.ID) throws -> AssignmentRecord? {
         var descriptor = FetchDescriptor<AssignmentRecord>(predicate: #Predicate { $0.id == assignmentID })
         descriptor.fetchLimit = 1
-        guard let record = try fetch(descriptor).first else { return }
-        record.isCompleted = isCompleted
+        return try fetch(descriptor).first
+    }
+
+    func deleteAllData() throws {
+        do {
+            try context.delete(model: AssignmentRecord.self)
+            try context.delete(model: CourseRecord.self)
+        } catch {
+            Logger.persistence.error("Deleting all planner data failed: \(error.localizedDescription, privacy: .private)")
+            context.rollback()
+            throw PlannerPersistenceError.saveFailed
+        }
         try save()
     }
 

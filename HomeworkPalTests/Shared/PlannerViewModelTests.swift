@@ -25,6 +25,26 @@ struct PlannerViewModelTests {
         #expect(!reopened.isCompleted)
     }
 
+    @Test func markAddedToCalendarIsSavedAndIdempotent() throws {
+        let persistence = InMemoryPlannerService(courses: [.english], assignments: [essay])
+        let planner = PlannerViewModel(persistence: persistence)
+        planner.loadPlanner()
+
+        planner.markAddedToCalendar(essay)
+        planner.markAddedToCalendar(essay)
+
+        #expect(planner.assignments.map(\.isAddedToCalendar) == [true])
+        #expect(try persistence.fetchPlanner().assignments.map(\.isAddedToCalendar) == [true])
+    }
+
+    @Test func markAddedToCalendarIgnoresUnknownAssignment() {
+        let planner = PlannerViewModel(courses: Course.sampleData, assignments: [essay])
+
+        planner.markAddedToCalendar(quiz)
+
+        #expect(planner.assignments == [essay])
+    }
+
     @Test func addCourseAppendsIt() {
         let planner = PlannerViewModel(courses: [], assignments: [])
         let robotics = Course(name: "Robotics", colorHex: "#6155F5")
@@ -41,6 +61,20 @@ struct PlannerViewModelTests {
 
         #expect(planner.courses == [.biology])
         #expect(planner.assignments == [quiz])
+    }
+
+    @Test func deleteAllDataEmptiesPlannerAndPersistence() throws {
+        let persistence = InMemoryPlannerService(courses: [.english], assignments: [essay])
+        let planner = PlannerViewModel(persistence: persistence)
+        planner.loadPlanner()
+
+        try planner.deleteAllData()
+
+        #expect(planner.courses.isEmpty)
+        #expect(planner.assignments.isEmpty)
+        let saved = try persistence.fetchPlanner()
+        #expect(saved.courses.isEmpty)
+        #expect(saved.assignments.isEmpty)
     }
 
     @Test func startsEmptyUntilLoaded() {

@@ -9,13 +9,24 @@ nonisolated struct Assignment: Identifiable, Hashable, Codable, Sendable {
     var course: Course
     var dueDate: Date
     var isCompleted: Bool
+    /// Set once the student saves the event in Apple's Add Event sheet. Without calendar access the app
+    /// can't see the event afterwards, so this can't detect a later deletion.
+    var isAddedToCalendar: Bool
 
-    init(id: UUID = UUID(), title: String, course: Course, dueDate: Date, isCompleted: Bool = false) {
+    init(
+        id: UUID = UUID(),
+        title: String,
+        course: Course,
+        dueDate: Date,
+        isCompleted: Bool = false,
+        isAddedToCalendar: Bool = false
+    ) {
         self.id = id
         self.title = title
         self.course = course
         self.dueDate = dueDate
         self.isCompleted = isCompleted
+        self.isAddedToCalendar = isAddedToCalendar
     }
 }
 

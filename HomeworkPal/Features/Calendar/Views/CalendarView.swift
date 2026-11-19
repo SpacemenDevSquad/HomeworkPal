@@ -26,6 +26,27 @@ struct CalendarView: View {
             .tint(Theme.primaryText)
             // The system large title can't hold a button beside it, so the title is drawn in `titleHeader` instead.
             .toolbar(.hidden, for: .navigationBar)
+            // Closing one sheet opens the next during Add All; it waits for dismissal so sheets don't overlap.
+            .sheet(item: $viewModel.assignmentToAddToCalendar, onDismiss: viewModel.presentNextQueuedCalendarEvent) { assignment in
+                AddToCalendarSheet(
+                    assignment: assignment,
+                    onSaved: { viewModel.markAddedToCalendar(assignment) },
+                    onCancelled: viewModel.cancelQueuedCalendarEvents
+                )
+                // Apple's form is embedded rather than presented, so it can't block a swipe-down itself;
+                // without this, a swipe would silently discard the student's edits.
+                .interactiveDismissDisabled()
+            }
+            .alert("Add All Events?", item: $viewModel.dayPendingAddAll) { day in
+                Button("Add") {
+                    viewModel.addAllToCalendar(on: day)
+                }
+                .keyboardShortcut(.defaultAction)
+                Button("Cancel", role: .cancel) {}
+            } message: { day in
+                // Automatic grammar agreement turns "assignment" plural when the count isn't 1.
+                Text("^[\(day.assignmentsNotAddedToCalendar.count) assignment](inflect: true) will open in the Add Event sheet, one at a time.")
+            }
             .alert("Mark as Complete?", item: $viewModel.pendingCompletion) { assignment in
                 Button("Complete") {
                     withAnimation { viewModel.markComplete(assignment) }

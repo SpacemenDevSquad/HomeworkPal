@@ -33,6 +33,7 @@ final class AssignmentRecord {
     var title = ""
     var dueDate = Date.now
     var isCompleted = false
+    var isAddedToCalendar = false
     var course: CourseRecord?
 
     init(_ assignment: Assignment, course: CourseRecord) {
@@ -40,12 +41,20 @@ final class AssignmentRecord {
         title = assignment.title
         dueDate = assignment.dueDate
         isCompleted = assignment.isCompleted
+        isAddedToCalendar = assignment.isAddedToCalendar
         self.course = course
     }
 
     /// The value-type form, or `nil` if the record has lost its course and shouldn't be shown.
     var assignment: Assignment? {
         guard let course else { return nil }
-        return Assignment(id: id, title: title, course: course.course, dueDate: dueDate, isCompleted: isCompleted)
+        return Assignment(
+            id: id,
+            title: title,
+            course: course.course,
+            dueDate: dueDate,
+            isCompleted: isCompleted,
+            isAddedToCalendar: isAddedToCalendar
+        )
     }
 }

@@ -43,7 +43,7 @@ struct DashboardViewModelTests {
     @Test func addAssignmentAppearsInSections() {
         let viewModel = makeViewModel(assignments: [])
 
-        viewModel.addAssignment(laterAssignment)
+        viewModel.addAssignment(laterAssignment, addToCalendar: false)
 
         #expect(viewModel.sections.flatMap(\.assignments) == [laterAssignment])
     }
@@ -63,5 +63,69 @@ struct DashboardViewModelTests {
         planner.markComplete(overdueAssignment)
 
         #expect(viewModel.isEmpty)
+    }
+
+    @Test func addingWithCalendarQueuesUntilFormDismisses() {
+        let viewModel = makeViewModel(assignments: [])
+
+        viewModel.addAssignment(laterAssignment, addToCalendar: true)
+        #expect(viewModel.assignmentToAddToCalendar == nil)
+
+        viewModel.presentQueuedCalendarEvent()
+        #expect(viewModel.assignmentToAddToCalendar == laterAssignment)
+    }
+
+    @Test func addingWithoutCalendarQueuesNothing() {
+        let viewModel = makeViewModel(assignments: [])
+
+        viewModel.addAssignment(laterAssignment, addToCalendar: false)
+        viewModel.presentQueuedCalendarEvent()
+
+        #expect(viewModel.assignmentToAddToCalendar == nil)
+    }
+
+    @Test func failedSaveDoesNotOfferCalendar() {
+        let viewModel = DashboardViewModel(planner: PlannerViewModel(persistence: UnavailablePlannerService()))
+
+        viewModel.addAssignment(laterAssignment, addToCalendar: true)
+        viewModel.presentQueuedCalendarEvent()
+
+        #expect(viewModel.assignmentToAddToCalendar == nil)
+    }
+
+    @Test func presentQueuedCalendarEventWithNothingQueuedDoesNothing() {
+        let viewModel = makeViewModel(assignments: [])
+
+        viewModel.presentQueuedCalendarEvent()
+
+        #expect(viewModel.assignmentToAddToCalendar == nil)
+    }
+
+    @Test func presentQueuedCalendarEventClearsQueue() {
+        let viewModel = makeViewModel(assignments: [])
+        viewModel.addAssignment(laterAssignment, addToCalendar: true)
+
+        viewModel.presentQueuedCalendarEvent()
+        viewModel.assignmentToAddToCalendar = nil
+        viewModel.presentQueuedCalendarEvent()
+
+        #expect(viewModel.assignmentToAddToCalendar == nil)
+    }
+
+    @Test func requestCalendarEventSetsAssignment() {
+        let viewModel = makeViewModel(assignments: [overdueAssignment])
+
+        viewModel.requestCalendarEvent(for: overdueAssignment)
+
+        #expect(viewModel.assignmentToAddToCalendar == overdueAssignment)
+    }
+
+    @Test func markAddedToCalendarSetsFlagInPlanner() {
+        let planner = PlannerViewModel(courses: Course.sampleData, assignments: [overdueAssignment])
+        let viewModel = DashboardViewModel(planner: planner)
+
+        viewModel.markAddedToCalendar(overdueAssignment)
+
+        #expect(planner.assignments.first?.isAddedToCalendar == true)
     }
 }

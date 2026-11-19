@@ -50,6 +50,15 @@ final class PlannerViewModel {
         setCompletion(false, for: assignment)
     }
 
+    /// Records that the student saved the assignment's event in Apple's Add Event sheet.
+    func markAddedToCalendar(_ assignment: Assignment) {
+        guard let index = assignments.firstIndex(where: { $0.id == assignment.id }) else { return }
+        perform {
+            try persistence.markAddedToCalendar(assignmentID: assignment.id)
+            assignments[index].isAddedToCalendar = true
+        }
+    }
+
     func addCourse(_ course: Course) {
         perform {
             try persistence.insertCourse(course)
@@ -64,6 +73,14 @@ final class PlannerViewModel {
             courses.removeAll { $0.id == course.id }
             assignments.removeAll { $0.course.id == course.id }
         }
+    }
+
+    /// Erases every class, activity, and assignment. Throws rather than using the shared error alert, so the
+    /// caller (Settings' Clear Data) can report the failure in its own UI.
+    func deleteAllData() throws {
+        try persistence.deleteAllData()
+        courses = []
+        assignments = []
     }
 
     /// Drives the error alert; setting it to `false` dismisses the current error.

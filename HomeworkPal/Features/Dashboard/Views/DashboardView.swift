@@ -31,8 +31,16 @@ struct DashboardView: View {
                     .accessibilityLabel(Text("Add Assignment"))
                 }
             }
-            .sheet(isPresented: $viewModel.isAddingAssignment) {
+            .sheet(isPresented: $viewModel.isAddingAssignment, onDismiss: viewModel.presentQueuedCalendarEvent) {
                 AddAssignmentView(courses: viewModel.courses, onSave: viewModel.addAssignment)
+            }
+            .sheet(item: $viewModel.assignmentToAddToCalendar) { assignment in
+                AddToCalendarSheet(assignment: assignment) {
+                    viewModel.markAddedToCalendar(assignment)
+                }
+                // Apple's form is embedded rather than presented, so it can't block a swipe-down itself;
+                // without this, a swipe would silently discard the student's edits.
+                .interactiveDismissDisabled()
             }
             .alert("Mark as Complete?", item: $viewModel.pendingCompletion) { assignment in
                 Button("Complete") {
@@ -63,9 +71,12 @@ struct DashboardView: View {
             ForEach(viewModel.sections) { section in
                 Section {
                     ForEach(section.assignments) { assignment in
-                        AssignmentRow(assignment: assignment, isOverdue: section.bucket == .overdue) {
-                            viewModel.requestCompletion(for: assignment)
-                        }
+                        AssignmentRow(
+                            assignment: assignment,
+                            isOverdue: section.bucket == .overdue,
+                            onToggle: { viewModel.requestCompletion(for: assignment) },
+                            onAddToCalendar: { viewModel.requestCalendarEvent(for: assignment) }
+                        )
                     }
                 } header: {
                     SectionHeader(

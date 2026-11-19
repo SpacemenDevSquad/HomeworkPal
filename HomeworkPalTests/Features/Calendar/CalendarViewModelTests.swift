@@ -178,4 +178,142 @@ struct CalendarViewModelTests {
 
         #expect(viewModel.days.allSatisfy { $0.isEmpty })
     }
+
+    @Test func requestCalendarEventSetsAssignment() {
+        let assignment = Assignment(title: "Essay", course: .english, dueDate: date(day: 19, hour: 9))
+        let viewModel = makeViewModel(assignments: [assignment])
+
+        viewModel.requestCalendarEvent(for: assignment)
+
+        #expect(viewModel.assignmentToAddToCalendar == assignment)
+    }
+
+    @Test func markAddedToCalendarSetsFlagAndKeepsDay() {
+        let assignment = Assignment(title: "Essay", course: .english, dueDate: date(day: 19, hour: 9))
+        let viewModel = makeViewModel(assignments: [assignment])
+
+        viewModel.markAddedToCalendar(assignment)
+
+        let thursday = viewModel.days.first { $0.date == date(day: 19) }
+        #expect(thursday?.assignments.first?.isAddedToCalendar == true)
+    }
+
+    @Test func markAddedToCalendarIgnoresUnknownAssignment() {
+        let assignment = Assignment(title: "Essay", course: .english, dueDate: date(day: 19, hour: 9))
+        let unknown = Assignment(title: "Other", course: .biology, dueDate: date(day: 20, hour: 9))
+        let viewModel = makeViewModel(assignments: [assignment])
+
+        viewModel.markAddedToCalendar(unknown)
+
+        #expect(viewModel.days.flatMap(\.assignments) == [assignment])
+    }
+
+    // MARK: - Add All to Calendar
+
+    /// Three assignments due Thursday, Nov 19: one already added, two not. Built once per test so IDs stay stable.
+    private func thursdayAssignments() -> (addedEssay: Assignment, openQuiz: Assignment, openLab: Assignment) {
+        (
+            Assignment(title: "Essay", course: .english, dueDate: date(day: 19, hour: 9), isAddedToCalendar: true),
+            Assignment(title: "Quiz", course: .biology, dueDate: date(day: 19, hour: 10)),
+            Assignment(title: "Lab", course: .chemistry, dueDate: date(day: 19, hour: 11))
+        )
+    }
+
+    private func thursday(in viewModel: CalendarViewModel) throws -> CalendarDay {
+        try #require(viewModel.days.first { $0.date == date(day: 19) })
+    }
+
+    @Test func dayListsOnlyAssignmentsNotYetAdded() throws {
+        let (addedEssay, openQuiz, _) = thursdayAssignments()
+        let viewModel = makeViewModel(assignments: [addedEssay, openQuiz])
+
+        let notAdded = try thursday(in: viewModel).assignmentsNotAddedToCalendar
+        #expect(notAdded == [openQuiz])
+    }
+
+    @Test func requestAddAllSetsPendingDay() throws {
+        let (_, openQuiz, _) = thursdayAssignments()
+        let viewModel = makeViewModel(assignments: [openQuiz])
+        let day = try thursday(in: viewModel)
+
+        viewModel.requestAddAll(for: day)
+
+        #expect(viewModel.dayPendingAddAll?.id == day.id)
+    }
+
+    @Test func requestAddAllIgnoresDayWithEverythingAdded() throws {
+        let (addedEssay, _, _) = thursdayAssignments()
+        let viewModel = makeViewModel(assignments: [addedEssay])
+
+        viewModel.requestAddAll(for: try thursday(in: viewModel))
+
+        #expect(viewModel.dayPendingAddAll == nil)
+    }
+
+    @Test func addAllOpensSheetForFirstAssignmentNotYetAdded() throws {
+        let (addedEssay, openQuiz, openLab) = thursdayAssignments()
+        let viewModel = makeViewModel(assignments: [addedEssay, openQuiz, openLab])
+
+        viewModel.addAllToCalendar(on: try thursday(in: viewModel))
+
+        #expect(viewModel.assignmentToAddToCalendar == openQuiz)
+    }
+
+    @Test func closingSheetOpensNextQueuedAssignment() throws {
+        let (_, openQuiz, openLab) = thursdayAssignments()
+        let viewModel = makeViewModel(assignments: [openQuiz, openLab])
+        viewModel.addAllToCalendar(on: try thursday(in: viewModel))
+
+        viewModel.markAddedToCalendar(openQuiz)
+        viewModel.assignmentToAddToCalendar = nil
+        viewModel.presentNextQueuedCalendarEvent()
+        #expect(viewModel.assignmentToAddToCalendar == openLab)
+
+        viewModel.assignmentToAddToCalendar = nil
+        viewModel.presentNextQueuedCalendarEvent()
+        #expect(viewModel.assignmentToAddToCalendar == nil)
+    }
+
+    @Test func presentNextWaitsWhileSheetIsOpen() throws {
+        let (_, openQuiz, openLab) = thursdayAssignments()
+        let viewModel = makeViewModel(assignments: [openQuiz, openLab])
+        viewModel.addAllToCalendar(on: try thursday(in: viewModel))
+
+        viewModel.presentNextQueuedCalendarEvent()
+
+        #expect(viewModel.assignmentToAddToCalendar == openQuiz)
+    }
+
+    @Test func cancellingEndsAddAll() throws {
+        let (_, openQuiz, openLab) = thursdayAssignments()
+        let viewModel = makeViewModel(assignments: [openQuiz, openLab])
+        viewModel.addAllToCalendar(on: try thursday(in: viewModel))
+
+        viewModel.cancelQueuedCalendarEvents()
+        viewModel.assignmentToAddToCalendar = nil
+        viewModel.presentNextQueuedCalendarEvent()
+
+        #expect(viewModel.assignmentToAddToCalendar == nil)
+    }
+
+    @Test func addAllSkipsAssignmentsAddedOrCompletedWhileQueued() throws {
+        let (_, openQuiz, openLab) = thursdayAssignments()
+        let viewModel = makeViewModel(assignments: [openQuiz, openLab])
+        viewModel.addAllToCalendar(on: try thursday(in: viewModel))
+
+        viewModel.markAddedToCalendar(openLab)
+        viewModel.assignmentToAddToCalendar = nil
+        viewModel.presentNextQueuedCalendarEvent()
+
+        #expect(viewModel.assignmentToAddToCalendar == nil)
+    }
+
+    @Test func addAllWithNothingLeftOpensNoSheet() throws {
+        let (addedEssay, _, _) = thursdayAssignments()
+        let viewModel = makeViewModel(assignments: [addedEssay])
+
+        viewModel.addAllToCalendar(on: try thursday(in: viewModel))
+
+        #expect(viewModel.assignmentToAddToCalendar == nil)
+    }
 }
