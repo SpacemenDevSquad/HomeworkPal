@@ -43,6 +43,20 @@ struct PlannerViewModelTests {
         #expect(planner.assignments == [quiz])
     }
 
+    @Test func deleteAllDataEmptiesPlannerAndPersistence() throws {
+        let persistence = InMemoryPlannerService(courses: [.english], assignments: [essay])
+        let planner = PlannerViewModel(persistence: persistence)
+        planner.loadPlanner()
+
+        try planner.deleteAllData()
+
+        #expect(planner.courses.isEmpty)
+        #expect(planner.assignments.isEmpty)
+        let saved = try persistence.fetchPlanner()
+        #expect(saved.courses.isEmpty)
+        #expect(saved.assignments.isEmpty)
+    }
+
     @Test func startsEmptyUntilLoaded() {
         let planner = PlannerViewModel(persistence: InMemoryPlannerService(courses: [.english], assignments: [essay]))
 

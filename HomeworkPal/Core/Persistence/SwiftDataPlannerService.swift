@@ -62,6 +62,18 @@ final class SwiftDataPlannerService: PlannerPersistenceService {
         try save()
     }
 
+    func deleteAllData() throws {
+        do {
+            try context.delete(model: AssignmentRecord.self)
+            try context.delete(model: CourseRecord.self)
+        } catch {
+            Logger.persistence.error("Deleting all planner data failed: \(error.localizedDescription, privacy: .private)")
+            context.rollback()
+            throw PlannerPersistenceError.saveFailed
+        }
+        try save()
+    }
+
     private func courseRecord(withID courseID: Course.ID) throws -> CourseRecord? {
         var descriptor = FetchDescriptor<CourseRecord>(predicate: #Predicate { $0.id == courseID })
         descriptor.fetchLimit = 1

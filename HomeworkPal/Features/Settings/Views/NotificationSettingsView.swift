@@ -131,8 +131,10 @@ private struct LeadTimeRow: View {
     }
 }
 
+#if DEBUG
 #Preview {
     NavigationStack {
-        NotificationSettingsView(viewModel: SettingsViewModel())
+        NotificationSettingsView(viewModel: SettingsViewModel(userDataService: UserDataService(planner: PlannerViewModel())))
     }
 }
+#endif
