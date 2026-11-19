@@ -1,11 +1,9 @@
 import Combine
 import Foundation
-import os
 
 @MainActor
 final class CalendarViewModel: ObservableObject {
     private static let daysInWeek = 7
-    private static let logger = Logger(subsystem: Bundle.main.bundleIdentifier ?? "HomeworkPal", category: "Calendar")
 
     @Published private(set) var assignments: [Assignment]
     /// The first day of the week being shown, respecting the locale's first weekday.
@@ -19,23 +17,20 @@ final class CalendarViewModel: ObservableObject {
     @Published var assignmentToAddToCalendar: Assignment?
     /// The day awaiting confirmation before all its assignments are added to Calendar. Drives the confirmation alert.
     @Published var dayPendingAddAll: CalendarDay?
-    @Published var isShowingCalendarAccessDenied = false
-    @Published var isShowingAddAllFailure = false
 
+    /// Assignments still waiting for their turn in Apple's sheet during Add All, in due-date order.
+    private var queuedCalendarAssignments: [Assignment] = []
     private let calendar: Calendar
-    private let calendarEventService: any CalendarEventServiceProtocol
     /// Read on demand rather than stored, so "today" stays correct if the app stays open past midnight.
     private let currentDate: () -> Date
 
     init(
         assignments: [Assignment] = Assignment.sampleData,
         calendar: Calendar = .current,
-        calendarEventService: any CalendarEventServiceProtocol = CalendarEventService(),
         currentDate: @escaping () -> Date = { .now }
     ) {
         self.assignments = assignments
         self.calendar = calendar
-        self.calendarEventService = calendarEventService
         self.currentDate = currentDate
         self.weekStart = Self.startOfWeek(containing: currentDate(), calendar: calendar)
     }
@@ -116,40 +111,29 @@ final class CalendarViewModel: ObservableObject {
         dayPendingAddAll = day
     }
 
-    /// Adds every assignment on the day that isn't in Calendar yet, in one go.
-    /// - Returns: The assignments that were added, so the owner of the assignments can record them.
-    func addAllToCalendar(on day: CalendarDay) async -> [Assignment] {
+    /// Starts Add All: Apple's sheet opens for each of the day's not-yet-added assignments, one at a time.
+    func addAllToCalendar(on day: CalendarDay) {
         // Re-read the day so anything added or completed since the confirmation was shown is respected.
-        let assignmentsToAdd = days.first { $0.id == day.id }?.assignmentsNotAddedToCalendar ?? []
-        guard !assignmentsToAdd.isEmpty, await hasAddOnlyAccess() else { return [] }
-
-        var addedAssignments: [Assignment] = []
-        for assignment in assignmentsToAdd {
-            do {
-                try calendarEventService.save(assignment.calendarEventDetails)
-                markAddedToCalendar(assignment)
-                addedAssignments.append(assignment)
-            } catch {
-                // Keep going: one failed event shouldn't stop the rest of the day from being added.
-                Self.logger.error("Couldn't save calendar event: \(error.localizedDescription, privacy: .public)")
-                isShowingAddAllFailure = true
-            }
-        }
-        return addedAssignments
+        queuedCalendarAssignments = days.first { $0.id == day.id }?.assignmentsNotAddedToCalendar ?? []
+        presentNextQueuedCalendarEvent()
     }
 
-    private func hasAddOnlyAccess() async -> Bool {
-        do {
-            let isGranted = try await calendarEventService.requestAddOnlyAccess()
-            if !isGranted {
-                isShowingCalendarAccessDenied = true
+    /// Opens Apple's sheet for the next queued assignment once the previous sheet has closed.
+    func presentNextQueuedCalendarEvent() {
+        guard assignmentToAddToCalendar == nil else { return }
+        // Skip anything completed or added since Add All started.
+        while let next = queuedCalendarAssignments.first {
+            queuedCalendarAssignments.removeFirst()
+            if let current = assignments.first(where: { $0.id == next.id }), !current.isCompleted, !current.isAddedToCalendar {
+                assignmentToAddToCalendar = current
+                return
             }
-            return isGranted
-        } catch {
-            Self.logger.error("Calendar access request failed: \(error.localizedDescription, privacy: .public)")
-            isShowingAddAllFailure = true
-            return false
         }
+    }
+
+    /// Cancel in Apple's sheet ends the whole Add All run rather than skipping to the next assignment.
+    func cancelQueuedCalendarEvents() {
+        queuedCalendarAssignments.removeAll()
     }
 
     private func moveWeek(by weekCount: Int) {

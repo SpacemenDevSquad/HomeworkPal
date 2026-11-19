@@ -10,10 +10,13 @@ struct AddToCalendarSheet: UIViewControllerRepresentable {
     let assignment: Assignment
     /// Called only when the student taps Add, never on Cancel.
     let onSaved: () -> Void
+    /// Called when the student taps Cancel.
+    let onCancelled: () -> Void
 
-    init(assignment: Assignment, onSaved: @escaping () -> Void) {
+    init(assignment: Assignment, onSaved: @escaping () -> Void, onCancelled: @escaping () -> Void = {}) {
         self.assignment = assignment
         self.onSaved = onSaved
+        self.onCancelled = onCancelled
     }
 
     func makeCoordinator() -> Coordinator {
@@ -44,17 +47,24 @@ struct AddToCalendarSheet: UIViewControllerRepresentable {
 
     private func updateCoordinator(_ context: Context) {
         context.coordinator.onSaved = onSaved
+        context.coordinator.onCancelled = onCancelled
         context.coordinator.dismiss = context.environment.dismiss
     }
 
     final class Coordinator: NSObject, EKEventEditViewDelegate {
         let eventStore = EKEventStore()
         var onSaved: () -> Void = {}
+        var onCancelled: () -> Void = {}
         var dismiss: DismissAction?
 
         func eventEditViewController(_ controller: EKEventEditViewController, didCompleteWith action: EKEventEditViewAction) {
-            if action == .saved {
+            switch action {
+            case .saved:
                 onSaved()
+            case .canceled:
+                onCancelled()
+            default:
+                break
             }
             // Dismissing through SwiftUI keeps the presenting `.sheet(item:)` binding in sync.
             dismiss?()

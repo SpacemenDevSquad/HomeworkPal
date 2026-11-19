@@ -1,10 +1,8 @@
 import SwiftUI
-import UIKit
 
 struct CalendarView: View {
     @StateObject private var viewModel: CalendarViewModel
     @Environment(\.dismiss) private var dismiss
-    @Environment(\.openURL) private var openURL
 
     private let onComplete: (Assignment) -> Void
     private let onAddedToCalendar: (Assignment) -> Void
@@ -41,35 +39,29 @@ struct CalendarView: View {
             .tint(Theme.primaryText)
             // The system large title can't hold a button beside it, so the title is drawn in `titleHeader` instead.
             .toolbar(.hidden, for: .navigationBar)
-            .sheet(item: $viewModel.assignmentToAddToCalendar) { assignment in
-                AddToCalendarSheet(assignment: assignment) {
-                    viewModel.markAddedToCalendar(assignment)
-                    onAddedToCalendar(assignment)
-                }
+            // Closing one sheet opens the next during Add All; it waits for dismissal so sheets don't overlap.
+            .sheet(item: $viewModel.assignmentToAddToCalendar, onDismiss: viewModel.presentNextQueuedCalendarEvent) { assignment in
+                AddToCalendarSheet(
+                    assignment: assignment,
+                    onSaved: {
+                        viewModel.markAddedToCalendar(assignment)
+                        onAddedToCalendar(assignment)
+                    },
+                    onCancelled: viewModel.cancelQueuedCalendarEvents
+                )
                 // Apple's form is embedded rather than presented, so it can't block a swipe-down itself;
                 // without this, a swipe would silently discard the student's edits.
                 .interactiveDismissDisabled()
             }
             .alert("Add All Events?", item: $viewModel.dayPendingAddAll) { day in
                 Button("Add") {
-                    Task { await addAllToCalendar(on: day) }
+                    viewModel.addAllToCalendar(on: day)
                 }
                 .keyboardShortcut(.defaultAction)
                 Button("Cancel", role: .cancel) {}
             } message: { day in
                 // Automatic grammar agreement turns "assignment" plural when the count isn't 1.
-                Text("^[\(day.assignmentsNotAddedToCalendar.count) assignment](inflect: true) will be added to your calendar. HomeworkPal can only add events. It can't see your calendar.")
-            }
-            .alert("Calendar Access Is Off", isPresented: $viewModel.isShowingCalendarAccessDenied) {
-                Button("Open Settings", action: openSettings)
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                Text("To add assignments, allow HomeworkPal to add events in Settings.")
-            }
-            .alert("Couldn't Add to Calendar", isPresented: $viewModel.isShowingAddAllFailure) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text("Some assignments weren't added. Please try again.")
+                Text("^[\(day.assignmentsNotAddedToCalendar.count) assignment](inflect: true) will open in the Add Event sheet, one at a time.")
             }
             .alert("Mark as Complete?", item: $viewModel.pendingCompletion) { assignment in
                 Button("Complete") {
@@ -83,16 +75,6 @@ struct CalendarView: View {
                 Text("\"\(assignment.title)\" will be checked off your list.")
             }
         }
-    }
-
-    private func addAllToCalendar(on day: CalendarDay) async {
-        let addedAssignments = await viewModel.addAllToCalendar(on: day)
-        addedAssignments.forEach(onAddedToCalendar)
-    }
-
-    private func openSettings() {
-        guard let settingsURL = URL(string: UIApplication.openSettingsURLString) else { return }
-        openURL(settingsURL)
     }
 
     private var titleHeader: some View {
