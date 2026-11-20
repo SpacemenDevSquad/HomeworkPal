@@ -28,8 +28,6 @@ struct AssignmentDetailView: View {
         .background(Theme.background)
         .navigationTitle("Assignment")
         .navigationBarTitleDisplayMode(.inline)
-        // The Calendar tab hides its bar; this screen needs it for Back and Edit.
-        .toolbar(.visible, for: .navigationBar)
         .toolbar {
             if viewModel.assignment != nil {
                 ToolbarItem(placement: .primaryAction) {
