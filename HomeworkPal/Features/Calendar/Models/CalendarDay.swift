@@ -1,13 +1,14 @@
 import Foundation
 
-/// One day in the week view, with the open work due on it.
+/// One day in the week strip, with everything due on it.
 struct CalendarDay: Identifiable, Sendable {
     /// Three or more items is the point where a student's day starts to feel crowded.
     private static let busyThreshold = 3
 
     /// The start of the day. Each day in a week is unique, so this also serves as the identity.
     let date: Date
-    /// Open assignments due on this day, soonest first.
+    /// Every assignment due on this day, completed ones included, soonest first.
+    /// Completed work stays listed so the day's count doesn't shift as the student checks things off.
     let assignments: [Assignment]
     let isToday: Bool
 
@@ -17,18 +18,12 @@ struct CalendarDay: Identifiable, Sendable {
         assignments.isEmpty
     }
 
-    /// Assignments that "Add All to Calendar" would still add, so already-added ones aren't duplicated.
-    var assignmentsNotAddedToCalendar: [Assignment] {
-        assignments.filter { !$0.isAddedToCalendar }
-    }
-
     var isBusy: Bool {
         assignments.count >= Self.busyThreshold
     }
 
-    /// The distinct classes and activities with work due, in due-date order, for the day's color dots.
-    var courses: [Course] {
-        var seenCourseIDs: Set<Course.ID> = []
-        return assignments.map(\.course).filter { seenCourseIDs.insert($0.id).inserted }
+    /// Open assignments that "Add All to Calendar" would still add, so finished or already-added ones are skipped.
+    var assignmentsNotAddedToCalendar: [Assignment] {
+        assignments.filter { !$0.isCompleted && !$0.isAddedToCalendar }
     }
 }

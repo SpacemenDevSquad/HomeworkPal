@@ -13,8 +13,8 @@ final class CalendarViewModel: ObservableObject {
 
     /// The first day of the week being shown, respecting the locale's first weekday.
     @Published private(set) var weekStart: Date
-    /// The day whose assignments are expanded. Only one day is expanded at a time.
-    @Published private(set) var expandedDayID: CalendarDay.ID?
+    /// The start of the day whose assignments are listed below the week strip. Always within the shown week.
+    @Published private(set) var selectedDate: Date
 
     /// The assignment Apple's Add Event sheet is open for. Drives the calendar sheet.
     @Published var assignmentToAddToCalendar: Assignment?
@@ -36,17 +36,16 @@ final class CalendarViewModel: ObservableObject {
         self.planner = planner
         self.calendar = calendar
         self.currentDate = currentDate
-        self.weekStart = Self.startOfWeek(containing: currentDate(), calendar: calendar)
+        let today = calendar.startOfDay(for: currentDate())
+        self.weekStart = Self.startOfWeek(containing: today, calendar: calendar)
+        self.selectedDate = today
         PlannerObservation.forwardChanges(from: planner, to: self)
     }
 
-    /// The seven days of the shown week, each with its open assignments.
+    /// The seven days of the shown week, each with everything due on it.
     var days: [CalendarDay] {
-        let openAssignments = planner.assignments
-            .filter { !$0.isCompleted }
-            .sorted { $0.dueDate < $1.dueDate }
-        let assignmentsByDay = Dictionary(grouping: openAssignments) { calendar.startOfDay(for: $0.dueDate) }
-        let today = calendar.startOfDay(for: currentDate())
+        let sortedAssignments = planner.assignments.sorted { $0.dueDate < $1.dueDate }
+        let assignmentsByDay = Dictionary(grouping: sortedAssignments) { calendar.startOfDay(for: $0.dueDate) }
 
         return (0..<Self.daysInWeek).compactMap { offset in
             guard let date = calendar.date(byAdding: .day, value: offset, to: weekStart) else { return nil }
@@ -54,14 +53,27 @@ final class CalendarViewModel: ObservableObject {
         }
     }
 
-    /// From the first to the last day of the shown week, for the week title.
-    var weekRange: Range<Date> {
-        let lastDay = calendar.date(byAdding: .day, value: Self.daysInWeek - 1, to: weekStart) ?? weekStart
-        return weekStart..<lastDay
+    /// The day listed below the week strip.
+    var selectedDay: CalendarDay {
+        days.first { $0.date == selectedDate }
+            ?? CalendarDay(date: selectedDate, assignments: [], isToday: selectedDate == today)
+    }
+
+    /// `true` while today is the selected day, so the Today button can hide itself.
+    var isShowingToday: Bool {
+        selectedDate == today
     }
 
     var isShowingCurrentWeek: Bool {
-        weekStart == Self.startOfWeek(containing: currentDate(), calendar: calendar)
+        weekStart == Self.startOfWeek(containing: today, calendar: calendar)
+    }
+
+    func isSelected(_ day: CalendarDay) -> Bool {
+        day.date == selectedDate
+    }
+
+    func select(_ day: CalendarDay) {
+        selectedDate = day.date
     }
 
     func showPreviousWeek() {
@@ -72,16 +84,15 @@ final class CalendarViewModel: ObservableObject {
         moveWeek(by: 1)
     }
 
-    func showCurrentWeek() {
-        showWeek(containing: currentDate())
+    func showToday() {
+        show(today)
     }
 
-    /// Jumps to the week that contains `date`, such as a day picked from the month calendar.
-    func showWeek(containing date: Date) {
-        let newWeekStart = Self.startOfWeek(containing: date, calendar: calendar)
-        guard newWeekStart != weekStart else { return }
-        weekStart = newWeekStart
-        expandedDayID = nil
+    /// Shows the week containing `date` and selects that day, such as a day picked from the month calendar.
+    func show(_ date: Date) {
+        let day = calendar.startOfDay(for: date)
+        weekStart = Self.startOfWeek(containing: day, calendar: calendar)
+        selectedDate = day
     }
 
     /// Whether reaching the week containing `date` means moving forward or backward from the shown week.
@@ -89,27 +100,24 @@ final class CalendarViewModel: ObservableObject {
         Self.startOfWeek(containing: date, calendar: calendar) < weekStart ? .backward : .forward
     }
 
-    /// The day the month picker opens on: today when this week is shown, otherwise the shown week's first day.
+    /// The day the month picker opens on.
     var pickerStartDate: Date {
-        isShowingCurrentWeek ? calendar.startOfDay(for: currentDate()) : weekStart
+        selectedDate
     }
 
-    /// Expands the day to show every item, or collapses it if it's already open. Empty days have nothing to expand.
-    func toggleExpansion(of day: CalendarDay) {
-        guard !day.isEmpty else { return }
-        expandedDayID = expandedDayID == day.id ? nil : day.id
-    }
-
-    func isExpanded(_ day: CalendarDay) -> Bool {
-        expandedDayID == day.id
-    }
-
+    /// Completed work is done, so it's never shown as overdue.
     func isOverdue(_ assignment: Assignment) -> Bool {
-        DueBucket.bucket(for: assignment.dueDate, now: currentDate(), calendar: calendar) == .overdue
+        !assignment.isCompleted
+            && DueBucket.bucket(for: assignment.dueDate, now: currentDate(), calendar: calendar) == .overdue
     }
 
-    func markComplete(_ assignment: Assignment) {
-        planner.markComplete(assignment)
+    /// Checks off or reopens the assignment. It stays on its day either way.
+    func toggleCompletion(of assignment: Assignment) {
+        if assignment.isCompleted {
+            planner.markIncomplete(assignment)
+        } else {
+            planner.markComplete(assignment)
+        }
     }
 
     func requestCalendarEvent(for assignment: Assignment) {
@@ -151,10 +159,20 @@ final class CalendarViewModel: ObservableObject {
         queuedCalendarAssignments.removeAll()
     }
 
+    private var today: Date {
+        calendar.startOfDay(for: currentDate())
+    }
+
+    /// Moving into the current week selects today; any other week keeps the same weekday selected.
     private func moveWeek(by weekCount: Int) {
         guard let newWeekStart = calendar.date(byAdding: .weekOfYear, value: weekCount, to: weekStart) else { return }
+        if newWeekStart == Self.startOfWeek(containing: today, calendar: calendar) {
+            show(today)
+            return
+        }
+        let newSelection = calendar.date(byAdding: .weekOfYear, value: weekCount, to: selectedDate) ?? newWeekStart
         weekStart = newWeekStart
-        expandedDayID = nil
+        selectedDate = newSelection
     }
 
     private static func startOfWeek(containing date: Date, calendar: Calendar) -> Date {

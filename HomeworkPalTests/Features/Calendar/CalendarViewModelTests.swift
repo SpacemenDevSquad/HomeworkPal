@@ -55,11 +55,12 @@ struct CalendarViewModelTests {
         #expect(viewModel.days.allSatisfy { $0.isEmpty })
     }
 
-    @Test func completedAssignmentsAreHidden() {
+    @Test func completedAssignmentsStayOnTheirDay() {
         let completed = Assignment(title: "Done", course: .english, dueDate: date(day: 18, hour: 9), isCompleted: true)
         let viewModel = makeViewModel(assignments: [completed])
 
-        #expect(viewModel.days.allSatisfy { $0.isEmpty })
+        #expect(viewModel.selectedDay.assignments == [completed])
+        #expect(!viewModel.isOverdue(completed))
     }
 
     @Test func dayWithThreeItemsIsBusy() {
@@ -69,18 +70,6 @@ struct CalendarViewModelTests {
         #expect(viewModel.days.filter(\.isBusy).map(\.date) == [date(day: 19)])
     }
 
-    @Test func dayCoursesAreUniqueInDueOrder() {
-        let assignments = [
-            Assignment(title: "A", course: .calculus, dueDate: date(day: 19, hour: 9)),
-            Assignment(title: "B", course: .english, dueDate: date(day: 19, hour: 10)),
-            Assignment(title: "C", course: .calculus, dueDate: date(day: 19, hour: 11))
-        ]
-        let viewModel = makeViewModel(assignments: assignments)
-
-        let thursday = viewModel.days.first { $0.date == date(day: 19) }
-
-        #expect(thursday?.courses.map(\.id) == [Course.calculus.id, Course.english.id])
-    }
 
     @Test func nextAndPreviousWeekMoveByOneWeek() {
         let viewModel = makeViewModel(assignments: [])
@@ -94,22 +83,26 @@ struct CalendarViewModelTests {
         #expect(viewModel.weekStart == date(day: 8))
     }
 
-    @Test func showCurrentWeekReturnsToToday() {
+    @Test func showTodayReturnsToTodayFromAnotherWeek() {
         let viewModel = makeViewModel(assignments: [])
 
         viewModel.showNextWeek()
-        viewModel.showCurrentWeek()
+        #expect(!viewModel.isShowingToday)
+        viewModel.showToday()
 
         #expect(viewModel.isShowingCurrentWeek)
+        #expect(viewModel.selectedDate == date(day: 18))
+        #expect(viewModel.isShowingToday)
     }
 
-    @Test func showWeekJumpsToTheWeekContainingTheDate() {
+    @Test func showJumpsToTheWeekContainingTheDateAndSelectsIt() {
         let viewModel = makeViewModel(assignments: [])
 
         // Wednesday, January 13, 2027 falls in the week starting Sunday, January 10.
-        viewModel.showWeek(containing: calendar.date(from: DateComponents(year: 2027, month: 1, day: 13, hour: 9)) ?? .distantPast)
+        viewModel.show(calendar.date(from: DateComponents(year: 2027, month: 1, day: 13, hour: 9)) ?? .distantPast)
 
         #expect(viewModel.weekStart == calendar.date(from: DateComponents(year: 2027, month: 1, day: 10)))
+        #expect(viewModel.selectedDate == calendar.date(from: DateComponents(year: 2027, month: 1, day: 13)))
         #expect(!viewModel.isShowingCurrentWeek)
     }
 
@@ -123,12 +116,12 @@ struct CalendarViewModelTests {
         #expect(viewModel.direction(toWeekContaining: now) == .backward)
     }
 
-    @Test func pickerOpensOnTodayOrTheShownWeeksFirstDay() {
+    @Test func pickerOpensOnTheSelectedDay() {
         let viewModel = makeViewModel(assignments: [])
         #expect(viewModel.pickerStartDate == date(day: 18))
 
         viewModel.showNextWeek()
-        #expect(viewModel.pickerStartDate == date(day: 22))
+        #expect(viewModel.pickerStartDate == date(day: 25))
     }
 
     @Test func weekNavigationCrossesMonthBoundaries() {
@@ -140,43 +133,36 @@ struct CalendarViewModelTests {
         #expect(viewModel.days.map(\.date).last == date(month: 12, day: 5))
     }
 
-    @Test func toggleExpansionOpensAndClosesOneDayAtATime() throws {
-        let assignments = [
-            Assignment(title: "A", course: .calculus, dueDate: date(day: 16, hour: 9)),
-            Assignment(title: "B", course: .english, dueDate: date(day: 17, hour: 9))
-        ]
-        let viewModel = makeViewModel(assignments: assignments)
-        let monday = try #require(viewModel.days.first { $0.date == date(day: 16) })
-        let tuesday = try #require(viewModel.days.first { $0.date == date(day: 17) })
-
-        viewModel.toggleExpansion(of: monday)
-        #expect(viewModel.isExpanded(monday))
-
-        viewModel.toggleExpansion(of: tuesday)
-        #expect(!viewModel.isExpanded(monday))
-        #expect(viewModel.isExpanded(tuesday))
-
-        viewModel.toggleExpansion(of: tuesday)
-        #expect(viewModel.expandedDayID == nil)
-    }
-
-    @Test func emptyDayCannotBeExpanded() throws {
+    @Test func todayIsSelectedAtFirst() {
         let viewModel = makeViewModel(assignments: [])
-        let sunday = try #require(viewModel.days.first)
 
-        viewModel.toggleExpansion(of: sunday)
-
-        #expect(viewModel.expandedDayID == nil)
+        #expect(viewModel.selectedDate == date(day: 18))
+        #expect(viewModel.isShowingToday)
     }
 
-    @Test func changingWeekCollapsesExpandedDay() throws {
-        let viewModel = makeViewModel(assignments: [Assignment(title: "A", course: .calculus, dueDate: date(day: 16, hour: 9))])
+    @Test func selectingADayListsItsAssignments() throws {
+        let mondayQuiz = Assignment(title: "Quiz", course: .biology, dueDate: date(day: 16, hour: 9))
+        let viewModel = makeViewModel(assignments: [mondayQuiz])
         let monday = try #require(viewModel.days.first { $0.date == date(day: 16) })
 
-        viewModel.toggleExpansion(of: monday)
-        viewModel.showNextWeek()
+        viewModel.select(monday)
 
-        #expect(viewModel.expandedDayID == nil)
+        #expect(viewModel.isSelected(monday))
+        #expect(viewModel.selectedDay.assignments == [mondayQuiz])
+        #expect(!viewModel.isShowingToday)
+    }
+
+    @Test func changingWeekKeepsTheSameWeekdaySelected() throws {
+        let viewModel = makeViewModel(assignments: [])
+        let monday = try #require(viewModel.days.first { $0.date == date(day: 16) })
+        viewModel.select(monday)
+
+        viewModel.showNextWeek()
+        #expect(viewModel.selectedDate == date(day: 23))
+
+        // Coming back to this week selects today rather than the remembered weekday.
+        viewModel.showPreviousWeek()
+        #expect(viewModel.selectedDate == date(day: 18))
     }
 
     @Test func pastDueAssignmentIsOverdue() {
@@ -188,13 +174,15 @@ struct CalendarViewModelTests {
         #expect(!viewModel.isOverdue(upcoming))
     }
 
-    @Test func markCompleteRemovesAssignmentFromDay() {
-        let assignment = Assignment(title: "Essay", course: .english, dueDate: date(day: 19, hour: 9))
+    @Test func checkingOffKeepsTheAssignmentOnItsDayAndCanBeUndone() {
+        let assignment = Assignment(title: "Essay", course: .english, dueDate: date(day: 18, hour: 20))
         let viewModel = makeViewModel(assignments: [assignment])
 
-        viewModel.markComplete(assignment)
+        viewModel.toggleCompletion(of: assignment)
+        #expect(viewModel.selectedDay.assignments.map(\.isCompleted) == [true])
 
-        #expect(viewModel.days.allSatisfy { $0.isEmpty })
+        viewModel.toggleCompletion(of: viewModel.selectedDay.assignments[0])
+        #expect(viewModel.selectedDay.assignments.map(\.isCompleted) == [false])
     }
 
     @Test func requestCalendarEventSetsAssignment() {
@@ -241,9 +229,10 @@ struct CalendarViewModelTests {
         try #require(viewModel.days.first { $0.date == date(day: 19) })
     }
 
-    @Test func dayListsOnlyAssignmentsNotYetAdded() throws {
-        let (addedEssay, openQuiz, _) = thursdayAssignments()
-        let viewModel = makeViewModel(assignments: [addedEssay, openQuiz])
+    @Test func dayListsOnlyOpenAssignmentsNotYetAdded() throws {
+        let (addedEssay, openQuiz, openLab) = thursdayAssignments()
+        let finishedLab = Assignment(title: openLab.title, course: openLab.course, dueDate: openLab.dueDate, isCompleted: true)
+        let viewModel = makeViewModel(assignments: [addedEssay, openQuiz, finishedLab])
 
         let notAdded = try thursday(in: viewModel).assignmentsNotAddedToCalendar
         #expect(notAdded == [openQuiz])

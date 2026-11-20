@@ -4,9 +4,18 @@ struct CalendarView: View {
     /// A requested move to another week. Held for one view update before it's applied, so the
     /// outgoing week is re-rendered with the new slide direction before it animates away.
     private struct PendingWeekChange: Equatable {
+        enum Kind: Equatable {
+            /// Move by this many weeks, keeping the same weekday selected.
+            case byWeeks(Int)
+            /// Jump to this exact day.
+            case toDate(Date)
+        }
+
         let id = UUID()
-        let target: Date
+        let kind: Kind
     }
+
+    private static let arrowIconSize: CGFloat = 28
 
     @StateObject private var viewModel: CalendarViewModel
     /// Kept to build each assignment's detail screen.
@@ -23,35 +32,51 @@ struct CalendarView: View {
     var body: some View {
         NavigationStack {
             ScrollView {
-                LazyVStack(spacing: 10) {
+                VStack(alignment: .leading, spacing: 16) {
                     titleHeader
-                    weekDays
+                    weekStrip
+                    dayHeader
+                    agenda
                 }
                 .padding([.horizontal, .bottom])
             }
             .background(Theme.background)
-            // Pinned to the bottom so the week arrows sit within easy thumb reach; content scrolls underneath.
-            .safeAreaInset(edge: .bottom) {
-                weekNavigator
-            }
             .tint(Theme.primaryText)
             .navigationDestination(for: AssignmentLink.self) { link in
                 AssignmentDetailView(planner: planner, assignmentID: link.id)
             }
-            .task(id: pendingWeekChange) {
-                guard let change = pendingWeekChange else { return }
+            // `onChange` rather than `.task(id:)`: a task re-runs whenever the view reappears, which replayed the
+            // last week change after switching tabs and threw away the day the student had picked.
+            .onChange(of: pendingWeekChange) { _, change in
+                guard let change else { return }
                 withAnimation(.snappy) {
-                    viewModel.showWeek(containing: change.target)
+                    switch change.kind {
+                    case .byWeeks(let weekCount):
+                        weekCount > 0 ? viewModel.showNextWeek() : viewModel.showPreviousWeek()
+                    case .toDate(let date):
+                        viewModel.show(date)
+                    }
                 }
+                pendingWeekChange = nil
             }
             .sheet(isPresented: $isShowingWeekPicker) {
                 WeekPickerSheet(initialDate: viewModel.pickerStartDate) { date in
                     isShowingWeekPicker = false
-                    changeWeek(toWeekContaining: date)
+                    change(to: date)
                 }
             }
-            // The system large title can't hold a button beside it, so the title is drawn in `titleHeader` instead.
-            .toolbar(.hidden, for: .navigationBar)
+            // The system large title keeps "Calendar" at the same height as the other tabs' titles.
+            .navigationTitle("Calendar")
+            .toolbar {
+                if !viewModel.isShowingToday {
+                    ToolbarItem(placement: .primaryAction) {
+                        Button("Today") {
+                            change(to: .now)
+                        }
+                        .foregroundStyle(Theme.primaryText)
+                    }
+                }
+            }
             // Closing one sheet opens the next during Add All; it waits for dismissal so sheets don't overlap.
             .sheet(item: $viewModel.assignmentToAddToCalendar, onDismiss: viewModel.presentNextQueuedCalendarEvent) { assignment in
                 AddToCalendarSheet(
@@ -76,96 +101,121 @@ struct CalendarView: View {
         }
     }
 
+    /// The month, which opens the month picker, beside the previous and next week arrows.
     private var titleHeader: some View {
         HStack {
-            Text("Calendar")
-                .font(.largeTitle.bold())
-                .foregroundStyle(Theme.primaryText)
-                .accessibilityAddTraits(.isHeader)
-
+            monthButton
             Spacer()
-
-            if !viewModel.isShowingCurrentWeek {
-                Button("Back to This Week") {
-                    changeWeek(toWeekContaining: .now)
-                }
-                .buttonStyle(.glass)
-                .foregroundStyle(Theme.primaryText)
-                .frame(minHeight: Theme.minimumTapTarget)
-            }
+            weekArrows
         }
-        // Keeps the header the same height whether or not the button is showing, so the rows don't shift.
-        .frame(minHeight: Theme.minimumTapTarget)
     }
 
-    /// The shown week's days. Its identity is the week, so changing weeks swaps the whole block and
-    /// slides the new week in from the side it's coming from.
-    private var weekDays: some View {
-        VStack(spacing: 10) {
-            ForEach(viewModel.days) { day in
-                CalendarDayRow(day: day, viewModel: viewModel)
+    private var monthButton: some View {
+        Button {
+            isShowingWeekPicker = true
+        } label: {
+            HStack(spacing: 4) {
+                Text(viewModel.selectedDate, format: .dateTime.month(.wide).year())
+                    .contentTransition(.numericText())
+                Image(systemName: "chevron.down")
+                    .font(.caption.weight(.semibold))
+                    .accessibilityHidden(true)
             }
+            .font(.headline)
+            .foregroundStyle(Theme.secondaryText)
+            .frame(minHeight: Theme.minimumTapTarget)
+            .contentShape(.rect)
         }
-        .id(viewModel.weekStart)
-        .transition(.push(from: slideDirection == .forward ? .trailing : .leading))
+        .buttonStyle(.plain)
+        .accessibilityHint(Text("Opens a calendar to jump to another day"))
     }
 
-    private var weekNavigator: some View {
-        HStack {
-            Button {
-                changeWeek(byWeeks: -1)
-            } label: {
-                Image(systemName: "chevron.left")
-                    .frame(minWidth: Theme.minimumTapTarget, minHeight: Theme.minimumTapTarget)
-                    .contentShape(.circle)
-            }
-            .accessibilityLabel(Text("Previous Week"))
+    private var weekArrows: some View {
+        HStack(spacing: 8) {
+            weekArrow(systemImage: "chevron.left", label: Text("Previous Week"), weekCount: -1)
+            weekArrow(systemImage: "chevron.right", label: Text("Next Week"), weekCount: 1)
+        }
+    }
 
-            Spacer()
-
-            Button {
-                isShowingWeekPicker = true
-            } label: {
-                HStack(spacing: 6) {
-                    Text(viewModel.weekRange, format: .interval.month(.abbreviated).day())
-                        .contentTransition(.numericText())
-                    Image(systemName: "chevron.down")
-                        .font(.caption.weight(.semibold))
-                        .accessibilityHidden(true)
-                }
-                .font(.headline)
-                .padding(.horizontal, 4)
-                .frame(minHeight: Theme.minimumTapTarget)
-            }
-            .buttonBorderShape(.capsule)
-            .accessibilityHint(Text("Opens a calendar to jump to another week"))
-
-            Spacer()
-
-            Button {
-                changeWeek(byWeeks: 1)
-            } label: {
-                Image(systemName: "chevron.right")
-                    .frame(minWidth: Theme.minimumTapTarget, minHeight: Theme.minimumTapTarget)
-                    .contentShape(.circle)
-            }
-            .accessibilityLabel(Text("Next Week"))
+    private func weekArrow(systemImage: String, label: Text, weekCount: Int) -> some View {
+        Button {
+            changeWeek(by: weekCount)
+        } label: {
+            Image(systemName: systemImage)
+                .font(.body.weight(.semibold))
+                // The glass style adds its own padding, which brings this up to a full 44-point tap target.
+                .frame(width: Self.arrowIconSize, height: Self.arrowIconSize)
+                .contentShape(.circle)
         }
         .buttonStyle(.glass)
         .buttonBorderShape(.circle)
         .foregroundStyle(Theme.primaryText)
-        .padding([.horizontal, .bottom])
+        .accessibilityLabel(label)
     }
 
-    private func changeWeek(byWeeks weekCount: Int) {
-        let target = Calendar.current.date(byAdding: .weekOfYear, value: weekCount, to: viewModel.weekStart) ?? viewModel.weekStart
-        changeWeek(toWeekContaining: target)
+    /// The week's identity is its first day, so changing weeks swaps the whole strip and
+    /// slides the new week in from the side it's coming from.
+    private var weekStrip: some View {
+        CalendarWeekStrip(viewModel: viewModel, onChangeWeek: changeWeek(by:))
+            .id(viewModel.weekStart)
+            .transition(.push(from: slideDirection == .forward ? .trailing : .leading))
     }
 
-    /// Sets the slide direction now and applies the move on the next update (see `PendingWeekChange`).
-    private func changeWeek(toWeekContaining date: Date) {
+    /// Moves by whole weeks, from the arrows or a swipe, keeping the same weekday selected.
+    private func changeWeek(by weekCount: Int) {
+        slideDirection = weekCount > 0 ? .forward : .backward
+        pendingWeekChange = PendingWeekChange(kind: .byWeeks(weekCount))
+    }
+
+    private var dayHeader: some View {
+        HStack(alignment: .firstTextBaseline) {
+            Text(viewModel.selectedDate, format: .dateTime.weekday(.wide).month(.wide).day())
+                .font(.title2.bold())
+                .foregroundStyle(Theme.primaryText)
+                .accessibilityAddTraits(.isHeader)
+            Spacer(minLength: 8)
+            // An empty day already says "Nothing due" below, so the count only shows when there's work.
+            if !viewModel.selectedDay.isEmpty {
+                Text("^[\(viewModel.selectedDay.assignments.count) assignment](inflect: true)")
+                    .font(.subheadline)
+                    .foregroundStyle(Theme.secondaryText)
+            }
+        }
+        .padding(.top, 4)
+    }
+
+    @ViewBuilder
+    private var agenda: some View {
+        let day = viewModel.selectedDay
+        if day.isEmpty {
+            emptyDay
+        } else {
+            LazyVStack(spacing: 10) {
+                ForEach(day.assignments) { assignment in
+                    CalendarAgendaRow(
+                        assignment: assignment,
+                        isOverdue: viewModel.isOverdue(assignment),
+                        onToggle: { viewModel.toggleCompletion(of: assignment) },
+                        onAddToCalendar: { viewModel.requestCalendarEvent(for: assignment) }
+                    )
+                    // Scoped to the day, so a row is drawn fresh when the selection or its due day changes.
+                    .id(SectionedRowID(section: day.id, assignment: assignment.id))
+                }
+            }
+        }
+    }
+
+    private var emptyDay: some View {
+        Text("Nothing due")
+            .font(.body)
+            .foregroundStyle(Theme.secondaryText)
+            .frame(maxWidth: .infinity, minHeight: Theme.minimumTapTarget * 2)
+    }
+
+    /// Jumps to `date`, setting the slide direction now and applying the move on the next update (see `PendingWeekChange`).
+    private func change(to date: Date) {
         slideDirection = viewModel.direction(toWeekContaining: date)
-        pendingWeekChange = PendingWeekChange(target: date)
+        pendingWeekChange = PendingWeekChange(kind: .toDate(date))
     }
 }
 
@@ -191,7 +241,7 @@ private struct WeekPickerSheet: View {
                 .padding(.horizontal)
                 .frame(maxHeight: .infinity, alignment: .top)
                 .background(Theme.background)
-                .navigationTitle("Go to Week")
+                .navigationTitle("Go to Date")
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .cancellationAction) {
