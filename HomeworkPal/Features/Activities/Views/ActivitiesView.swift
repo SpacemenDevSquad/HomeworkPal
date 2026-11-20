@@ -105,7 +105,7 @@ struct ActivitiesView: View {
                     Button("Delete", systemImage: "trash") {
                         viewModel.requestDeletion(of: course)
                     }
-                    .tint(.red)
+                    .tint(Theme.destructive)
                 }
                 .contextMenu {
                     Button("Delete", systemImage: "trash", role: .destructive) {
@@ -117,13 +117,8 @@ struct ActivitiesView: View {
         .scrollContentBackground(.hidden)
     }
 
-    // Uses automatic grammar agreement so the count reads "1 assignment" or "3 assignments".
     private func deletionMessage(for course: Course) -> Text {
-        let assignmentCount = viewModel.totalAssignmentCount(for: course)
-        guard assignmentCount > 0 else {
-            return Text("\"\(course.name)\" will be deleted.")
-        }
-        return Text("\"\(course.name)\" and its ^[\(assignmentCount) assignment](inflect: true) will be deleted.")
+        Text.courseDeletionMessage(courseName: course.name, assignmentCount: viewModel.totalAssignmentCount(for: course))
     }
 }
 

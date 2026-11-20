@@ -37,6 +37,21 @@ final class CourseDetailViewModel: ObservableObject {
         planner.updateCourse(course)
     }
 
+    /// Deletes the course and its assignments.
+    func deleteCourse() {
+        planner.deleteCourse(course)
+    }
+
+    /// `true` once the course has been deleted, so the screen knows to close.
+    var isCourseDeleted: Bool {
+        planner.course(withID: initialCourse.id) == nil
+    }
+
+    /// Every assignment deleting this course would remove, open or completed, for the warning.
+    var totalAssignmentCount: Int {
+        planner.assignments(for: course).count
+    }
+
     /// Open assignments, soonest first.
     var openAssignments: [Assignment] {
         planner.assignments(for: course)

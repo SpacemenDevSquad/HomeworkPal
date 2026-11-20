@@ -5,16 +5,28 @@ struct AddAssignmentView: View {
     @Environment(\.dismiss) private var dismiss
     /// Counts rejected saves; each one shakes the form and shows what's missing.
     @State private var rejectedSaveCount = 0
+    @State private var isConfirmingDeletion = false
     @FocusState private var isTitleFocused: Bool
 
     private let onSave: (Assignment, Bool) -> Void
+    private let onDelete: (() -> Void)?
+    /// The saved title, so the delete warning names the assignment even if the title field has been edited.
+    private let originalTitle: String
 
     /// - Parameters:
     ///   - editing: The assignment to edit. Leave `nil` to add a new one.
     ///   - onSave: Receives the assignment and whether the student asked to add it to Apple Calendar.
-    init(courses: [Course], editing: Assignment? = nil, onSave: @escaping (Assignment, Bool) -> Void) {
+    ///   - onDelete: Called once the student confirms deletion. When set, editing shows a Delete button.
+    init(
+        courses: [Course],
+        editing: Assignment? = nil,
+        onSave: @escaping (Assignment, Bool) -> Void,
+        onDelete: (() -> Void)? = nil
+    ) {
         _viewModel = StateObject(wrappedValue: AddAssignmentViewModel(courses: courses, editing: editing))
         self.onSave = onSave
+        self.onDelete = onDelete
+        self.originalTitle = editing?.title ?? ""
     }
 
     var body: some View {
@@ -29,6 +41,11 @@ struct AddAssignmentView: View {
                 detailsSection
                 notesSection
                 courseSection
+                if viewModel.isEditing, onDelete != nil {
+                    DeleteButtonSection(title: "Delete Assignment") {
+                        isConfirmingDeletion = true
+                    }
+                }
             }
             .scrollContentBackground(.hidden)
             .rejectedSaveFeedback(attempts: rejectedSaveCount)
@@ -52,8 +69,19 @@ struct AddAssignmentView: View {
                     // Left enabled so a tap can explain what's missing instead of doing nothing.
                 }
             }
+            .alert("Delete Assignment?", isPresented: $isConfirmingDeletion) {
+                Button("Delete", role: .destructive, action: delete)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text("\"\(originalTitle)\" will be permanently deleted.")
+            }
         }
         .presentationBackground(Theme.background)
+    }
+
+    private func delete() {
+        onDelete?()
+        dismiss()
     }
 
     private var notesSection: some View {
@@ -169,6 +197,10 @@ struct AddAssignmentView: View {
 #if DEBUG
 #Preview {
     AddAssignmentView(courses: Course.sampleData) { _, _ in }
+}
+
+#Preview("Editing") {
+    AddAssignmentView(courses: Course.sampleData, editing: Assignment.sampleData[4], onSave: { _, _ in }, onDelete: {})
 }
 
 #Preview("No Classes") {

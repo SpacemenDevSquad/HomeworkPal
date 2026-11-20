@@ -50,6 +50,13 @@ final class PlannerViewModel {
         }
     }
 
+    func deleteAssignment(_ assignment: Assignment) {
+        perform {
+            try persistence.deleteAssignment(assignment)
+            assignments.removeAll { $0.id == assignment.id }
+        }
+    }
+
     func markComplete(_ assignment: Assignment) {
         setCompletion(true, for: assignment)
     }

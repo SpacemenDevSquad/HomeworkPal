@@ -17,6 +17,7 @@ protocol PlannerPersistenceService {
     func insertAssignment(_ assignment: Assignment) throws
     /// Saves edits to an existing assignment, including moving it to another course.
     func updateAssignment(_ assignment: Assignment) throws
+    func deleteAssignment(_ assignment: Assignment) throws
     func setCompletion(_ isCompleted: Bool, forAssignmentID assignmentID: Assignment.ID) throws
     /// Records that the assignment's due date was saved to Apple Calendar.
     func markAddedToCalendar(assignmentID: Assignment.ID) throws
