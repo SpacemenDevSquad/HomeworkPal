@@ -2,7 +2,6 @@ import Foundation
 
 /// How long before an assignment's due date a reminder fires.
 enum ReminderLeadTime: Int, CaseIterable, Identifiable, Sendable {
-    case atDueTime = 0
     case fifteenMinutes = 15
     case oneHour = 60
     case threeHours = 180
@@ -16,7 +15,6 @@ enum ReminderLeadTime: Int, CaseIterable, Identifiable, Sendable {
 
     var title: LocalizedStringResource {
         switch self {
-        case .atDueTime: "At Due Time"
         case .fifteenMinutes: "15 Minutes Before"
         case .oneHour: "1 Hour Before"
         case .threeHours: "3 Hours Before"

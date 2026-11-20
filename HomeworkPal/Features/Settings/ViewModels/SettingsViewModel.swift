@@ -75,18 +75,6 @@ final class SettingsViewModel: ObservableObject {
         Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String ?? "–"
     }
 
-    func isLeadTimeSelected(_ leadTime: ReminderLeadTime) -> Bool {
-        notificationPreferences.leadTimes.contains(leadTime)
-    }
-
-    func toggleLeadTime(_ leadTime: ReminderLeadTime) {
-        if notificationPreferences.leadTimes.contains(leadTime) {
-            notificationPreferences.leadTimes.remove(leadTime)
-        } else {
-            notificationPreferences.leadTimes.insert(leadTime)
-        }
-    }
-
     /// Turns notifications off if the user revoked permission in the Settings app since the preference was saved.
     func refreshNotificationStatus() async {
         guard notificationsEnabled else { return }

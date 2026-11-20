@@ -9,8 +9,7 @@ struct NotificationSettingsView: View {
         Form {
             masterToggleSection
             if viewModel.notificationsEnabled {
-                remindersSection
-                extrasSection
+                settingsSection
             }
         }
         .scrollContentBackground(.hidden)
@@ -46,28 +45,19 @@ struct NotificationSettingsView: View {
         .listRowBackground(Theme.surface)
     }
 
-    private var remindersSection: some View {
+    private var settingsSection: some View {
         Section {
-            ForEach(viewModel.leadTimeOptions) { leadTime in
-                LeadTimeRow(
-                    title: leadTime.title,
-                    isSelected: viewModel.isLeadTimeSelected(leadTime)
-                ) {
-                    viewModel.toggleLeadTime(leadTime)
+            VStack(alignment: .leading, spacing: 0) {
+                Label("Remind Me", systemImage: "clock")
+                Picker("Remind Me", selection: $viewModel.notificationPreferences.reminderLeadTime) {
+                    Text("None").tag(nil as ReminderLeadTime?)
+                    ForEach(viewModel.leadTimeOptions) { leadTime in
+                        Text(leadTime.title).tag(leadTime as ReminderLeadTime?)
+                    }
                 }
+                .pickerStyle(.wheel)
+                .labelsHidden()
             }
-        } header: {
-            Text("Remind Me")
-                .foregroundStyle(Theme.primaryText)
-        } footer: {
-            Text("Choose one or more reminders for each assignment.")
-                .foregroundStyle(Theme.secondaryText)
-        }
-        .listRowBackground(Theme.surface)
-    }
-
-    private var extrasSection: some View {
-        Section {
             Toggle(isOn: $viewModel.notificationPreferences.isDailySummaryEnabled) {
                 Label("Daily Summary", systemImage: "sun.horizon")
             }
@@ -81,10 +71,10 @@ struct NotificationSettingsView: View {
                 Label("Sound", systemImage: "speaker.wave.2")
             }
         } header: {
-            Text("More")
+            Text("Settings")
                 .foregroundStyle(Theme.primaryText)
         } footer: {
-            Text("The daily summary lists what's due today. Overdue reminders nudge you each morning about work that isn't checked off.")
+            Text("Each assignment gets one reminder before it's due. The daily summary lists what's due today. Overdue reminders nudge you each morning about work that isn't checked off.")
                 .foregroundStyle(Theme.secondaryText)
         }
         .toggleStyle(.switch)
@@ -138,6 +128,22 @@ private struct LeadTimeRow: View {
         NotificationSettingsView(viewModel: SettingsViewModel(
             userDataService: UserDataService(planner: planner),
             // Memory-only, so the preview never opens the real store or iCloud.
+            cloudSyncService: CloudSyncService(planner: planner) { _ in InMemoryPlannerService() }
+        ))
+    }
+}
+
+#Preview("Enabled") {
+    let planner = PlannerViewModel()
+    // A throwaway suite, so the preview starts with notifications on without touching the app's real settings.
+    let userDefaults = UserDefaults(suiteName: "NotificationSettingsPreview") ?? .standard
+    var preferences = NotificationPreferences()
+    preferences.isEnabled = true
+    preferences.save(to: userDefaults)
+    return NavigationStack {
+        NotificationSettingsView(viewModel: SettingsViewModel(
+            userDefaults: userDefaults,
+            userDataService: UserDataService(planner: planner),
             cloudSyncService: CloudSyncService(planner: planner) { _ in InMemoryPlannerService() }
         ))
     }
