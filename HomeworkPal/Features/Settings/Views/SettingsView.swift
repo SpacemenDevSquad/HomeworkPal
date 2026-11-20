@@ -4,7 +4,10 @@ struct SettingsView: View {
     @StateObject private var viewModel: SettingsViewModel
 
     init(planner: PlannerViewModel) {
-        _viewModel = StateObject(wrappedValue: SettingsViewModel(userDataService: UserDataService(planner: planner)))
+        _viewModel = StateObject(wrappedValue: SettingsViewModel(
+            userDataService: UserDataService(planner: planner),
+            cloudSyncService: CloudSyncService(planner: planner)
+        ))
     }
 
     var body: some View {
@@ -27,6 +30,7 @@ struct SettingsView: View {
             }
             .task {
                 await viewModel.refreshNotificationStatus()
+                await viewModel.refreshICloudStatus()
             }
             .confirmationDialog(
                 "Clear All Data?",
@@ -38,7 +42,12 @@ struct SettingsView: View {
                 }
                 Button("Cancel", role: .cancel) {}
             } message: {
-                Text("This permanently deletes your assignments, classes, and settings from this device. This can't be undone.")
+                // With sync on, deletions sync too, so the warning has to say every device is affected.
+                if viewModel.iCloudSyncEnabled {
+                    Text("This permanently deletes your assignments and classes from iCloud and every device signed in to it, plus this device's settings. This can't be undone.")
+                } else {
+                    Text("This permanently deletes your assignments, classes, and settings from this device. This can't be undone.")
+                }
             }
         }
         // Attached to the stack, not the root list, so errors also surface while a pushed screen is showing.
@@ -65,12 +74,21 @@ struct SettingsView: View {
             .toggleStyle(.switch)
             // Orange is reserved for fills, so the switch's "on" track uses the accent.
             .tint(Theme.accent)
+            if viewModel.iCloudSyncEnabled {
+                ICloudSyncStatusRow()
+            }
         } header: {
             Text("Preferences")
                 .foregroundStyle(Theme.primaryText)
         } footer: {
-            Text("iCloud Sync keeps your assignments in your own private iCloud storage, never on our servers.")
-                .foregroundStyle(Theme.secondaryText)
+            VStack(alignment: .leading, spacing: 6) {
+                if viewModel.isICloudAccountMissing {
+                    Label("Sign in to iCloud in the Settings app to start syncing.", systemImage: "exclamationmark.icloud")
+                        .foregroundStyle(Theme.primaryText)
+                }
+                Text("iCloud Sync keeps your classes and assignments up to date on every device signed in to your Apple Account, using your own private iCloud storage, never our servers.")
+                    .foregroundStyle(Theme.secondaryText)
+            }
         }
         .listRowBackground(Theme.surface)
     }
@@ -137,6 +155,8 @@ private struct ExternalLinkRow: View {
 
 #if DEBUG
 #Preview {
-    SettingsView(planner: PlannerViewModel())
+    let planner = PlannerViewModel()
+    SettingsView(planner: planner)
+        .environment(CloudSyncStatusViewModel.preview(planner: planner))
 }
 #endif

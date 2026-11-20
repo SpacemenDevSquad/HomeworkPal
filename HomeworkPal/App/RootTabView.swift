@@ -30,8 +30,10 @@ struct RootTabView: View {
 
 #if DEBUG
 #Preview {
+    let planner = PlannerViewModel()
     RootTabView()
-        .environment(PlannerViewModel())
+        .environment(planner)
+        .environment(CloudSyncStatusViewModel.preview(planner: planner))
         .tint(Theme.primaryText)
 }
 #endif

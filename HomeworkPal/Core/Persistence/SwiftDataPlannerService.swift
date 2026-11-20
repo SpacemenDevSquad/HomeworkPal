@@ -14,11 +14,36 @@ final class SwiftDataPlannerService: PlannerPersistenceService {
         context = container.mainContext
     }
 
-    /// - Parameter isStoredInMemoryOnly: Pass `true` for tests, so nothing is written to disk.
-    static func makeContainer(isStoredInMemoryOnly: Bool = false) throws -> ModelContainer {
+    /// The CloudKit container holding the student's private synced planner.
+    static let cloudKitContainerIdentifier = "iCloud.com.peterbrumbach.HomeworkPal"
+
+    /// - Parameters:
+    ///   - isStoredInMemoryOnly: Pass `true` for tests, so nothing is written to disk.
+    ///   - syncsWithICloud: Mirrors the store to the student's private iCloud database. Either way it's the
+    ///     same on-device store, so turning sync off keeps everything on this device.
+    static func makeContainer(isStoredInMemoryOnly: Bool = false, syncsWithICloud: Bool = false) throws -> ModelContainer {
         let schema = Schema([CourseRecord.self, AssignmentRecord.self])
-        let configuration = ModelConfiguration(schema: schema, isStoredInMemoryOnly: isStoredInMemoryOnly)
+        // Set explicitly in both cases: with the iCloud entitlement present, SwiftData's default would
+        // turn sync on automatically and ignore the student's choice.
+        let cloudKitDatabase: ModelConfiguration.CloudKitDatabase =
+            syncsWithICloud && !isStoredInMemoryOnly ? .private(cloudKitContainerIdentifier) : .none
+        let configuration = ModelConfiguration(
+            schema: schema,
+            isStoredInMemoryOnly: isStoredInMemoryOnly,
+            cloudKitDatabase: cloudKitDatabase
+        )
         return try ModelContainer(for: schema, configurations: configuration)
+    }
+
+    /// Opens the on-device store. If it can't be opened, the app still runs and explains that changes can't
+    /// be saved, rather than crashing or letting the student add work that would be lost.
+    static func makePersistence(syncsWithICloud: Bool) -> any PlannerPersistenceService {
+        do {
+            return SwiftDataPlannerService(container: try makeContainer(syncsWithICloud: syncsWithICloud))
+        } catch {
+            Logger.persistence.fault("Opening the planner store failed: \(error.localizedDescription, privacy: .private)")
+            return UnavailablePlannerService()
+        }
     }
 
     func fetchPlanner() throws -> PlannerSnapshot {
