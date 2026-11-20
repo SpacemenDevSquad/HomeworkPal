@@ -9,6 +9,8 @@ enum PreferenceKey {
     static let overdueRemindersEnabled = "overdueRemindersEnabled"
     static let notificationSoundEnabled = "notificationSoundEnabled"
     static let iCloudSyncEnabled = "iCloudSyncEnabled"
+    /// When this device last finished syncing with iCloud successfully.
+    static let lastICloudSyncDate = "lastICloudSyncDate"
 
     /// Every key above, so Clear Data can remove them all.
     static let allKeys = [
@@ -18,6 +20,7 @@ enum PreferenceKey {
         dailySummaryMinutesAfterMidnight,
         overdueRemindersEnabled,
         notificationSoundEnabled,
-        iCloudSyncEnabled
+        iCloudSyncEnabled,
+        lastICloudSyncDate
     ]
 }

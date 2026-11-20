@@ -11,8 +11,15 @@ final class SettingsViewModel: ObservableObject {
         didSet { notificationPreferences.save(to: userDefaults) }
     }
     @Published var iCloudSyncEnabled: Bool {
-        didSet { userDefaults.set(iCloudSyncEnabled, forKey: PreferenceKey.iCloudSyncEnabled) }
+        didSet {
+            guard iCloudSyncEnabled != oldValue else { return }
+            userDefaults.set(iCloudSyncEnabled, forKey: PreferenceKey.iCloudSyncEnabled)
+            cloudSyncService.setCloudSyncEnabled(iCloudSyncEnabled)
+            Task { await refreshICloudStatus() }
+        }
     }
+    /// `true` when sync is on but this device isn't signed in to iCloud, so nothing can sync yet.
+    @Published private(set) var isICloudAccountMissing = false
 
     /// Set when the user turns notifications on but the system permission is denied. Drives the "open Settings" alert.
     @Published var isShowingNotificationsDeniedAlert = false
@@ -23,17 +30,20 @@ final class SettingsViewModel: ObservableObject {
     private let calendar: Calendar
     private let notificationService: NotificationAuthorizationServiceProtocol
     private let userDataService: UserDataServiceProtocol
+    private let cloudSyncService: any CloudSyncServiceProtocol
 
     init(
         userDefaults: UserDefaults = .standard,
         calendar: Calendar = .current,
         notificationService: NotificationAuthorizationServiceProtocol = DummyNotificationAuthorizationService(),
-        userDataService: UserDataServiceProtocol
+        userDataService: UserDataServiceProtocol,
+        cloudSyncService: any CloudSyncServiceProtocol
     ) {
         self.userDefaults = userDefaults
         self.calendar = calendar
         self.notificationService = notificationService
         self.userDataService = userDataService
+        self.cloudSyncService = cloudSyncService
         self.notificationPreferences = NotificationPreferences(userDefaults: userDefaults)
         self.iCloudSyncEnabled = userDefaults.bool(forKey: PreferenceKey.iCloudSyncEnabled)
     }
@@ -100,6 +110,15 @@ final class SettingsViewModel: ObservableObject {
             notificationPreferences.isEnabled = false
             errorMessage = String(localized: "Notifications couldn't be turned on. Please try again.")
         }
+    }
+
+    /// Checks the iCloud account only while sync is on, since that's the only time it matters.
+    func refreshICloudStatus() async {
+        guard iCloudSyncEnabled else {
+            isICloudAccountMissing = false
+            return
+        }
+        isICloudAccountMissing = await !cloudSyncService.isICloudAccountAvailable()
     }
 
     func requestClearData() {

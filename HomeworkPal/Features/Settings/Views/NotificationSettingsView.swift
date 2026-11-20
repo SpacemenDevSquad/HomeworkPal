@@ -133,8 +133,13 @@ private struct LeadTimeRow: View {
 
 #if DEBUG
 #Preview {
+    let planner = PlannerViewModel()
     NavigationStack {
-        NotificationSettingsView(viewModel: SettingsViewModel(userDataService: UserDataService(planner: PlannerViewModel())))
+        NotificationSettingsView(viewModel: SettingsViewModel(
+            userDataService: UserDataService(planner: planner),
+            // Memory-only, so the preview never opens the real store or iCloud.
+            cloudSyncService: CloudSyncService(planner: planner) { _ in InMemoryPlannerService() }
+        ))
     }
 }
 #endif

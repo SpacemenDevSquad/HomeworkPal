@@ -16,7 +16,7 @@ final class PlannerViewModel {
     /// A user-facing description of the last failed load or save, shown in an alert.
     private(set) var errorMessage: String?
 
-    private let persistence: any PlannerPersistenceService
+    private var persistence: any PlannerPersistenceService
 
     init(persistence: any PlannerPersistenceService) {
         self.persistence = persistence
@@ -29,6 +29,59 @@ final class PlannerViewModel {
             courses = snapshot.courses
             assignments = snapshot.assignments
         }
+    }
+
+    /// Reloads after changes arrive from another device, then combines any duplicate classes they brought.
+    func refreshFromStore() {
+        loadPlanner()
+        mergeDuplicateCourses()
+    }
+
+    /// Switches to a different connection to the store, such as when iCloud sync is turned on or off, and reloads.
+    ///
+    /// The current connection is released before the new one is made, so two connections never have the
+    /// same store open at once.
+    func replacePersistence(with makePersistence: () -> any PlannerPersistenceService) {
+        persistence = UnavailablePlannerService()
+        persistence = makePersistence()
+        refreshFromStore()
+    }
+
+    /// Combines classes and activities that share a name and type into the one added first, moving their
+    /// assignments across so nothing is lost.
+    ///
+    /// Duplicates appear when two devices each had their own copy of a class before sync was turned on.
+    /// Every device keeps the earliest-added copy, so devices merging at the same time reach the same result.
+    func mergeDuplicateCourses() {
+        var keptCourses: [String: Course] = [:]
+        var didMerge = false
+        for course in courses {
+            let key = Self.duplicateKey(for: course)
+            guard let keptCourse = keptCourses[key] else {
+                keptCourses[key] = course
+                continue
+            }
+            let movedAssignments = assignments(for: course).map { assignment in
+                var moved = assignment
+                moved.course = keptCourse
+                return moved
+            }
+            perform {
+                for assignment in movedAssignments {
+                    try persistence.updateAssignment(assignment)
+                }
+                try persistence.deleteCourse(course)
+                didMerge = true
+            }
+        }
+        if didMerge {
+            loadPlanner()
+        }
+    }
+
+    private static func duplicateKey(for course: Course) -> String {
+        let name = course.name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return "\(course.kind.rawValue)|\(name)"
     }
 
     func assignments(for course: Course) -> [Assignment] {
