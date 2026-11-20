@@ -41,6 +41,16 @@ final class AssignmentDetailViewModel: ObservableObject {
         planner.updateAssignment(assignment)
     }
 
+    func deleteAssignment() {
+        guard let assignment else { return }
+        planner.deleteAssignment(assignment)
+    }
+
+    /// `true` once the assignment has been deleted, so the screen knows to close.
+    var isAssignmentDeleted: Bool {
+        assignment == nil
+    }
+
     /// On its own screen the button says exactly what it does, so no confirmation is needed.
     func toggleCompletion() {
         guard let assignment else { return }

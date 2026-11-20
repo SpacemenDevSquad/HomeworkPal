@@ -11,6 +11,8 @@ enum Theme {
     static let primaryText = Color("PrimaryText")
     static let secondaryText = Color("SecondaryText")
     static let accent = Color("AccentColor")
+    /// System red, outside the palette on purpose: actions that permanently remove data should read as dangerous.
+    static let destructive = Color.red
 
     static let cornerRadius: CGFloat = 14
     /// Apple's minimum comfortable tap target, in points.

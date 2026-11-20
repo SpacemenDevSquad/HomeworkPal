@@ -54,6 +54,10 @@ final class InMemoryPlannerService: PlannerPersistenceService {
         assignments[index].isCompleted = isCompleted
     }
 
+    func deleteAssignment(_ assignment: Assignment) throws {
+        assignments.removeAll { $0.id == assignment.id }
+    }
+
     func markAddedToCalendar(assignmentID: Assignment.ID) throws {
         guard let index = assignments.firstIndex(where: { $0.id == assignmentID }) else { return }
         assignments[index].isAddedToCalendar = true

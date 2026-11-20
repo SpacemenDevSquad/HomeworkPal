@@ -77,6 +77,12 @@ final class SwiftDataPlannerService: PlannerPersistenceService {
         try save()
     }
 
+    func deleteAssignment(_ assignment: Assignment) throws {
+        guard let record = try assignmentRecord(withID: assignment.id) else { return }
+        context.delete(record)
+        try save()
+    }
+
     func markAddedToCalendar(assignmentID: Assignment.ID) throws {
         guard let record = try assignmentRecord(withID: assignmentID) else { return }
         record.isAddedToCalendar = true

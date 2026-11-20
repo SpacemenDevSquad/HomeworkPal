@@ -4,6 +4,7 @@ struct CourseDetailView: View {
     private static let colorBarWidth: CGFloat = 6
 
     @StateObject private var viewModel: CourseDetailViewModel
+    @Environment(\.dismiss) private var dismiss
 
     init(planner: PlannerViewModel, course: Course) {
         _viewModel = StateObject(wrappedValue: CourseDetailViewModel(planner: planner, course: course))
@@ -27,12 +28,28 @@ struct CourseDetailView: View {
         .navigationTitle(viewModel.course.name)
         .toolbar {
             ToolbarItem(placement: .primaryAction) {
-                Button("Edit", action: viewModel.startEditing)
+                Button(action: viewModel.startEditing) {
+                    Image(systemName: "pencil")
+                        .foregroundStyle(Theme.primaryText)
+                }
+                .accessibilityLabel(Text("Edit \(viewModel.course.name)"))
             }
         }
-        .sheet(isPresented: $viewModel.isEditing) {
-            AddCourseView(existingCourses: viewModel.allCourses, editing: viewModel.course, onSave: viewModel.save)
+        // Waits for the sheet to finish closing before leaving, because a deleted class has nothing left to show.
+        .sheet(isPresented: $viewModel.isEditing, onDismiss: closeIfCourseDeleted) {
+            AddCourseView(
+                existingCourses: viewModel.allCourses,
+                editing: viewModel.course,
+                assignmentCount: viewModel.totalAssignmentCount,
+                onSave: viewModel.save,
+                onDelete: viewModel.deleteCourse
+            )
         }
+    }
+
+    private func closeIfCourseDeleted() {
+        guard viewModel.isCourseDeleted else { return }
+        dismiss()
     }
 
     private var hasDetails: Bool {

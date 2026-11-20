@@ -18,19 +18,32 @@ struct AddCourseView: View {
     @Environment(\.dismiss) private var dismiss
     /// Counts rejected saves; each one shakes the form and shows what's missing.
     @State private var rejectedSaveCount = 0
+    @State private var isConfirmingDeletion = false
     @FocusState private var isNameFocused: Bool
 
     private let onSave: (Course) -> Void
+    private let onDelete: (() -> Void)?
+    private let assignmentCount: Int
+    /// The saved name, so the delete warning names the item even if the name field has been edited.
+    private let originalName: String
 
-    /// - Parameter editing: The class or activity to edit. Leave `nil` to add a new one of `kind`.
+    /// - Parameters:
+    ///   - editing: The class or activity to edit. Leave `nil` to add a new one of `kind`.
+    ///   - assignmentCount: How many assignments deleting it would also remove, for the warning.
+    ///   - onDelete: Called once the student confirms deletion. When set, editing shows a Delete button.
     init(
         existingCourses: [Course],
         kind: CourseKind = .schoolClass,
         editing: Course? = nil,
-        onSave: @escaping (Course) -> Void
+        assignmentCount: Int = 0,
+        onSave: @escaping (Course) -> Void,
+        onDelete: (() -> Void)? = nil
     ) {
         _viewModel = StateObject(wrappedValue: AddCourseViewModel(existingCourses: existingCourses, kind: kind, editing: editing))
         self.onSave = onSave
+        self.onDelete = onDelete
+        self.assignmentCount = assignmentCount
+        self.originalName = editing?.name ?? ""
     }
 
     var body: some View {
@@ -49,6 +62,11 @@ struct AddCourseView: View {
                 repeatSection
                 locationSection
                 colorSection
+                if viewModel.isEditing, onDelete != nil {
+                    DeleteButtonSection(title: viewModel.kind == .activity ? "Delete Activity" : "Delete Class") {
+                        isConfirmingDeletion = true
+                    }
+                }
             }
             .scrollContentBackground(.hidden)
             .rejectedSaveFeedback(attempts: rejectedSaveCount)
@@ -73,8 +91,19 @@ struct AddCourseView: View {
                     // Left enabled so a tap can explain what's missing instead of doing nothing.
                 }
             }
+            .alert(viewModel.kind == .activity ? "Delete Activity?" : "Delete Class?", isPresented: $isConfirmingDeletion) {
+                Button("Delete", role: .destructive, action: delete)
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                Text.courseDeletionMessage(courseName: originalName, assignmentCount: assignmentCount)
+            }
         }
         .presentationBackground(Theme.background)
+    }
+
+    private func delete() {
+        onDelete?()
+        dismiss()
     }
 
     private var navigationTitle: LocalizedStringKey {
@@ -263,6 +292,16 @@ struct AddCourseView: View {
 #if DEBUG
 #Preview {
     AddCourseView(existingCourses: Course.sampleData) { _ in }
+}
+
+#Preview("Editing") {
+    AddCourseView(
+        existingCourses: Course.sampleData,
+        editing: .chemistry,
+        assignmentCount: 2,
+        onSave: { _ in },
+        onDelete: {}
+    )
 }
 
 #Preview("New Activity") {

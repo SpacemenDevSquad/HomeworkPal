@@ -79,6 +79,8 @@ struct SettingsView: View {
         Section {
             Button(role: .destructive, action: viewModel.requestClearData) {
                 Label("Clear All Data", systemImage: "trash")
+                    // The form's brown tint would otherwise override the destructive red.
+                    .foregroundStyle(Theme.destructive)
             }
         } header: {
             Text("Data")

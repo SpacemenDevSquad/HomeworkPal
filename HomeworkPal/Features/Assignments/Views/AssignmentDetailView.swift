@@ -9,6 +9,7 @@ struct AssignmentDetailView: View {
     private static let colorBarWidth: CGFloat = 6
 
     @StateObject private var viewModel: AssignmentDetailViewModel
+    @Environment(\.dismiss) private var dismiss
 
     init(planner: PlannerViewModel, assignmentID: Assignment.ID) {
         _viewModel = StateObject(wrappedValue: AssignmentDetailViewModel(planner: planner, assignmentID: assignmentID))
@@ -32,17 +33,30 @@ struct AssignmentDetailView: View {
         .toolbar {
             if viewModel.assignment != nil {
                 ToolbarItem(placement: .primaryAction) {
-                    Button("Edit", action: viewModel.startEditing)
+                    Button(action: viewModel.startEditing) {
+                        Image(systemName: "pencil")
+                            .foregroundStyle(Theme.primaryText)
+                    }
+                    .accessibilityLabel(Text("Edit Assignment"))
                 }
             }
         }
-        .sheet(isPresented: $viewModel.isEditing) {
+        // Waits for the sheet to finish closing before leaving, because a deleted assignment has nothing to show.
+        .sheet(isPresented: $viewModel.isEditing, onDismiss: closeIfAssignmentDeleted) {
             if let assignment = viewModel.assignment {
-                AddAssignmentView(courses: viewModel.courses, editing: assignment) { edited, _ in
-                    viewModel.save(edited)
-                }
+                AddAssignmentView(
+                    courses: viewModel.courses,
+                    editing: assignment,
+                    onSave: { edited, _ in viewModel.save(edited) },
+                    onDelete: viewModel.deleteAssignment
+                )
             }
         }
+    }
+
+    private func closeIfAssignmentDeleted() {
+        guard viewModel.isAssignmentDeleted else { return }
+        dismiss()
     }
 
     private func details(for assignment: Assignment) -> some View {
