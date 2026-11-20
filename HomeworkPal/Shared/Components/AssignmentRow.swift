@@ -166,6 +166,15 @@ struct AssignmentRow: View {
     }
 }
 
+/// Identifies an assignment row within the section that shows it.
+///
+/// Lazy stacks keep their rows by id, so an assignment that moves between sections under the same id can
+/// keep its old row and stale contents. Pairing the id with its section makes a moved row a new view.
+struct SectionedRowID<Section: Hashable>: Hashable {
+    let section: Section
+    let assignment: Assignment.ID
+}
+
 #if DEBUG
 #Preview {
     VStack {

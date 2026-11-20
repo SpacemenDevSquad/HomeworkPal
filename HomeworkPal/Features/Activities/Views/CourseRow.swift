@@ -14,8 +14,8 @@ struct CourseRow: View {
                 Text(course.name)
                     .font(.body.weight(.medium))
                     .foregroundStyle(Theme.primaryText)
-                if let details = scheduleDetails {
-                    Text(details)
+                if let location = course.location {
+                    Text(location)
                         .font(.footnote)
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -42,19 +42,6 @@ struct CourseRow: View {
                     .frame(width: colorBarWidth)
             }
             .accessibilityHidden(true)
-    }
-
-    /// For example "Mon, Wed, Fri · 3:30 – 5:00 PM · North Field". `nil` when there's nothing to show.
-    private var scheduleDetails: String? {
-        var parts: [String] = []
-        if let schedule = course.schedule {
-            parts.append(schedule.daysDescription())
-            parts.append(schedule.timeRange().formatted(.interval.hour().minute()))
-        }
-        if let location = course.location {
-            parts.append(location)
-        }
-        return parts.isEmpty ? nil : parts.joined(separator: " · ")
     }
 
     @ViewBuilder

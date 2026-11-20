@@ -22,6 +22,9 @@ struct CalendarDayRow: View {
                         onToggle: { viewModel.markComplete(assignment) },
                         onAddToCalendar: { viewModel.requestCalendarEvent(for: assignment) }
                     )
+                    // Scoped to the day, so an assignment moved to another day is drawn fresh rather than
+                    // reusing its old row with the old title and time.
+                    .id(SectionedRowID(section: day.id, assignment: assignment.id))
                 }
             }
         }

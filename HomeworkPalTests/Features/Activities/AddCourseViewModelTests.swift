@@ -40,7 +40,7 @@ struct AddCourseViewModelTests {
         #expect(course.colorHex == "#6155F5")
     }
 
-    @Test func noRepeatDaysMeansNoSchedule() throws {
+    @Test func blankLocationIsSavedAsNone() throws {
         let viewModel = AddCourseViewModel(existingCourses: [], kind: .activity)
         viewModel.name = "Chess Club"
         viewModel.location = "   "
@@ -48,44 +48,17 @@ struct AddCourseViewModelTests {
         let course = try #require(viewModel.makeCourse())
 
         #expect(course.kind == .activity)
-        #expect(course.schedule == nil)
         #expect(course.location == nil)
     }
 
-    @Test func repeatDaysTimesAndLocationAreSaved() throws {
-        let calendar = Calendar(identifier: .gregorian)
-        let now = try #require(calendar.date(from: DateComponents(year: 2026, month: 11, day: 18, hour: 8)))
-        let viewModel = AddCourseViewModel(existingCourses: [], kind: .activity, calendar: calendar, now: now)
+    @Test func locationIsTrimmedAndSaved() throws {
+        let viewModel = AddCourseViewModel(existingCourses: [], kind: .activity)
         viewModel.name = "Soccer"
         viewModel.location = " North Field "
-        viewModel.toggleWeekday(.monday)
-        viewModel.toggleWeekday(.wednesday)
-        viewModel.toggleWeekday(.friday)
-        viewModel.toggleWeekday(.wednesday)
-        viewModel.startTime = try #require(calendar.date(bySettingHour: 15, minute: 30, second: 0, of: now))
-        viewModel.endTime = try #require(calendar.date(bySettingHour: 17, minute: 0, second: 0, of: now))
 
         let course = try #require(viewModel.makeCourse())
-        let schedule = try #require(course.schedule)
 
-        #expect(schedule.weekdays == [.monday, .friday])
-        #expect(schedule.startMinutes == 15 * 60 + 30)
-        #expect(schedule.endMinutes == 17 * 60)
         #expect(course.location == "North Field")
-    }
-
-    @Test func endTimeBeforeStartTimeCannotBeSaved() throws {
-        let viewModel = AddCourseViewModel(existingCourses: [])
-        viewModel.name = "Math"
-        viewModel.toggleWeekday(.tuesday)
-        viewModel.endTime = viewModel.startTime
-
-        #expect(viewModel.hasInvalidTimeRange)
-        #expect(!viewModel.canSave)
-
-        // Clearing the days drops the schedule, so the times no longer matter.
-        viewModel.toggleWeekday(.tuesday)
-        #expect(viewModel.canSave)
     }
 }
 

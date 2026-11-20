@@ -15,13 +15,6 @@ final class CourseRecord {
     /// `CourseKind` raw value. Records saved before activities existed default to a class.
     var kindRawValue = CourseKind.schoolClass.rawValue
     var location = ""
-    // The schedule is flattened into plain fields so older records migrate with no schedule
-    // (no weekdays) and CloudKit sync stays simple.
-    /// `Weekday` raw values; empty means no schedule.
-    var scheduleWeekdays: [Int] = []
-    var scheduleStartMinutes = 0
-    var scheduleEndMinutes = 0
-    var scheduleRepeatsUntil: Date?
 
     @Relationship(deleteRule: .cascade, inverse: \AssignmentRecord.course)
     var assignments: [AssignmentRecord]? = []
@@ -37,10 +30,6 @@ final class CourseRecord {
         colorHex = course.colorHex
         kindRawValue = course.kind.rawValue
         location = course.location ?? ""
-        scheduleWeekdays = course.schedule?.weekdays.map(\.rawValue).sorted() ?? []
-        scheduleStartMinutes = course.schedule?.startMinutes ?? 0
-        scheduleEndMinutes = course.schedule?.endMinutes ?? 0
-        scheduleRepeatsUntil = course.schedule?.repeatsUntil
     }
 
     var course: Course {
@@ -49,19 +38,7 @@ final class CourseRecord {
             name: name,
             colorHex: colorHex,
             kind: CourseKind(rawValue: kindRawValue) ?? .schoolClass,
-            schedule: schedule,
             location: location.isEmpty ? nil : location
-        )
-    }
-
-    private var schedule: CourseSchedule? {
-        let weekdays = Set(scheduleWeekdays.compactMap(Weekday.init(rawValue:)))
-        guard !weekdays.isEmpty, let scheduleRepeatsUntil else { return nil }
-        return CourseSchedule(
-            weekdays: weekdays,
-            startMinutes: scheduleStartMinutes,
-            endMinutes: scheduleEndMinutes,
-            repeatsUntil: scheduleRepeatsUntil
         )
     }
 }

@@ -12,7 +12,7 @@ protocol PlannerPersistenceService {
     func insertCourse(_ course: Course) throws
     /// Deletes the course and every assignment that belongs to it.
     func deleteCourse(_ course: Course) throws
-    /// Saves edits to an existing course, such as its name, color, schedule, or location.
+    /// Saves edits to an existing course, such as its name, color, or location.
     func updateCourse(_ course: Course) throws
     func insertAssignment(_ assignment: Assignment) throws
     /// Saves edits to an existing assignment, including moving it to another course.

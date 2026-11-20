@@ -90,14 +90,14 @@ struct EditFormTests {
         #expect(viewModel.selectedCourseID == Course.english.id)
     }
 
-    @Test func courseFormPrefillsScheduleAndAllowsItsOwnName() throws {
+    @Test func courseFormPrefillsAndAllowsItsOwnName() throws {
         let viewModel = AddCourseViewModel(existingCourses: Course.sampleData, editing: .soccer)
 
         #expect(viewModel.isEditing)
         #expect(viewModel.kind == .activity)
         #expect(viewModel.name == "Soccer")
         #expect(!viewModel.isDuplicateName)
-        #expect(viewModel.selectedWeekdays == Course.soccer.schedule?.weekdays)
+        #expect(viewModel.selectedColorHex == Course.soccer.colorHex)
         #expect(viewModel.location == "North Field")
 
         viewModel.kind = .schoolClass
@@ -105,8 +105,7 @@ struct EditFormTests {
 
         #expect(edited.id == Course.soccer.id)
         #expect(edited.kind == .schoolClass)
-        #expect(edited.schedule?.startMinutes == Course.soccer.schedule?.startMinutes)
-        #expect(edited.schedule?.endMinutes == Course.soccer.schedule?.endMinutes)
+        #expect(edited.location == "North Field")
     }
 
     @Test func courseFormStillRejectsAnotherCoursesName() {
@@ -132,16 +131,14 @@ struct FormValidationMessageTests {
         #expect(classForm.canSave)
     }
 
-    @Test func courseFormExplainsADuplicateNameAndBadTimes() {
+    @Test func courseFormExplainsADuplicateName() {
         let viewModel = AddCourseViewModel(existingCourses: [.english])
         viewModel.name = "english"
         #expect(viewModel.validationMessage != nil)
+        #expect(!viewModel.canSave)
 
         viewModel.name = "Art"
-        viewModel.toggleWeekday(.monday)
-        viewModel.endTime = viewModel.startTime
-        #expect(viewModel.validationMessage != nil)
-        #expect(!viewModel.canSave)
+        #expect(viewModel.canSave)
     }
 
     @Test func assignmentFormExplainsWhatsMissing() {
