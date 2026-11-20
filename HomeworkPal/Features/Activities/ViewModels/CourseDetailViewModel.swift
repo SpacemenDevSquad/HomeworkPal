@@ -52,18 +52,32 @@ final class CourseDetailViewModel: ObservableObject {
         planner.assignments(for: course).count
     }
 
-    /// Open assignments, soonest first.
+    /// Assignments in the Upcoming section, soonest first.
     var openAssignments: [Assignment] {
         planner.assignments(for: course)
-            .filter { !$0.isCompleted }
+            .filter { !isPlacedInCompleted($0) }
             .sorted { $0.dueDate < $1.dueDate }
     }
 
-    /// Checked-off assignments, most recently due first, so finished work stays findable.
+    /// Assignments in the Completed section, most recently due first, so finished work stays findable.
     var completedAssignments: [Assignment] {
         planner.assignments(for: course)
-            .filter(\.isCompleted)
+            .filter(isPlacedInCompleted)
             .sorted { $0.dueDate > $1.dueDate }
+    }
+
+    /// The section each assignment was in when this screen first showed it, keyed by id.
+    ///
+    /// Checking or unchecking keeps a row where it is instead of moving it out from under the student's
+    /// finger; the sections re-sort the next time the screen opens. New assignments are placed by status.
+    private var placements: [Assignment.ID: Bool] = [:]
+
+    private func isPlacedInCompleted(_ assignment: Assignment) -> Bool {
+        if let placedInCompleted = placements[assignment.id] {
+            return placedInCompleted
+        }
+        placements[assignment.id] = assignment.isCompleted
+        return assignment.isCompleted
     }
 
     var isEmpty: Bool {

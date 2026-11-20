@@ -26,20 +26,9 @@ struct SwiftDataPlannerServiceTests {
         #expect(relaunched.assignments == [essay])
     }
 
-    @Test func activityScheduleAndLocationSurviveARelaunch() throws {
+    @Test func activityKindAndLocationSurviveARelaunch() throws {
         let (service, container) = try makeService()
-        let soccer = Course(
-            name: "Soccer",
-            colorHex: "#4A9BA3",
-            kind: .activity,
-            schedule: CourseSchedule(
-                weekdays: [.monday, .thursday],
-                startMinutes: 930,
-                endMinutes: 1020,
-                repeatsUntil: Date(timeIntervalSince1970: 1_800_000_000)
-            ),
-            location: "North Field"
-        )
+        let soccer = Course(name: "Soccer", colorHex: "#4A9BA3", kind: .activity, location: "North Field")
 
         try service.insertCourse(soccer)
 

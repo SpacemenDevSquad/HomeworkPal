@@ -12,7 +12,6 @@ struct AddCourseView: View {
     private static let hiddenCheckmarkScale: CGFloat = 0.4
     private static let checkmarkShadowOpacity = 0.25
     private static let selectionAnimationDuration = 0.2
-    private static let dayBubbleSize: CGFloat = 38
 
     @StateObject private var viewModel: AddCourseViewModel
     @Environment(\.dismiss) private var dismiss
@@ -59,7 +58,6 @@ struct AddCourseView: View {
                     kindSection
                 }
                 nameSection
-                repeatSection
                 locationSection
                 colorSection
                 if viewModel.isEditing, onDelete != nil {
@@ -75,7 +73,6 @@ struct AddCourseView: View {
             .foregroundStyle(Theme.primaryText)
             .tint(Theme.primaryText)
             .navigationTitle(navigationTitle)
-            .animation(.default, value: viewModel.hasSchedule)
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
@@ -143,63 +140,6 @@ struct AddCourseView: View {
         .listRowBackground(Theme.surface)
     }
 
-    private var repeatSection: some View {
-        Section {
-            // Each day takes an equal share of the row, so all seven fit on smaller phones too.
-            HStack(spacing: 0) {
-                ForEach(Weekday.mondayFirst) { weekday in
-                    dayBubble(for: weekday)
-                }
-            }
-            .padding(.vertical, Self.gridVerticalPadding)
-            .sensoryFeedback(.selection, trigger: viewModel.selectedWeekdays)
-
-            if viewModel.hasSchedule {
-                DatePicker("Starts", selection: $viewModel.startTime, displayedComponents: .hourAndMinute)
-                DatePicker("Ends", selection: $viewModel.endTime, displayedComponents: .hourAndMinute)
-                DatePicker("Repeat Until", selection: $viewModel.repeatsUntil, in: Date.now..., displayedComponents: .date)
-            }
-        } header: {
-            Text("Repeats On")
-                .foregroundStyle(Theme.primaryText)
-        } footer: {
-            Group {
-                if viewModel.hasInvalidTimeRange {
-                    Text("The end time needs to be after the start time.")
-                } else if !viewModel.hasSchedule {
-                    Text("Pick the days it meets to set a time.")
-                }
-            }
-            .foregroundStyle(Theme.secondaryText)
-        }
-        .listRowBackground(Theme.surface)
-    }
-
-    // Selected days are filled with the chosen color and use bolder text, so they don't rely on color alone.
-    private func dayBubble(for weekday: Weekday) -> some View {
-        let isSelected = viewModel.selectedWeekdays.contains(weekday)
-        let color = Color(hex: viewModel.selectedColorHex) ?? Theme.accent
-        return Button {
-            withAnimation(.snappy(duration: Self.selectionAnimationDuration)) {
-                viewModel.toggleWeekday(weekday)
-            }
-        } label: {
-            Text(weekday.veryShortSymbol())
-                .font(.subheadline.weight(isSelected ? .bold : .medium))
-                .foregroundStyle(isSelected ? .white : Theme.primaryText)
-                .frame(width: Self.dayBubbleSize, height: Self.dayBubbleSize)
-                .background {
-                    Circle()
-                        .fill(isSelected ? AnyShapeStyle(color.gradient) : AnyShapeStyle(Theme.background))
-                }
-                .frame(maxWidth: .infinity, minHeight: Theme.minimumTapTarget)
-                .contentShape(.rect)
-        }
-        .buttonStyle(.plain)
-        .accessibilityLabel(Text(weekday.fullSymbol()))
-        .accessibilityAddTraits(isSelected ? .isSelected : [])
-    }
-
     private var locationSection: some View {
         Section {
             TextField(text: $viewModel.location, prompt: Text("Room, field, or address").foregroundStyle(Theme.secondaryText)) {
@@ -260,6 +200,9 @@ struct AddCourseView: View {
                         .shadow(color: .black.opacity(Self.checkmarkShadowOpacity), radius: 1)
                         .scaleEffect(isSelected ? 1 : Self.hiddenCheckmarkScale)
                         .opacity(isSelected ? 1 : 0)
+                        // Selection is announced by the swatch's `.isSelected` trait; the faded-out
+                        // checkmarks on the other swatches would otherwise all read "Selected".
+                        .accessibilityHidden(true)
                 }
                 .padding(Self.selectionRingGap)
                 .overlay {

@@ -25,7 +25,8 @@ struct PlannerObservationTests {
         viewModel.toggleCompletion(of: viewModel.completedAssignments[0])
         await settle()
         #expect(changeCount == 2)
-        #expect(viewModel.openAssignments.map(\.id) == [essay.id])
+        // The row stays in place while the screen is open, now showing as not completed.
+        #expect(viewModel.completedAssignments.map(\.isCompleted) == [false])
         subscription.cancel()
     }
 

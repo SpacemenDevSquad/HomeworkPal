@@ -75,6 +75,9 @@ struct DashboardView: View {
                             onToggle: { viewModel.markComplete(assignment) },
                             onAddToCalendar: { viewModel.requestCalendarEvent(for: assignment) }
                         )
+                        // Scoped to the section: when an edit moves an assignment to another section, the lazy
+                        // stack would otherwise reuse the old row and keep showing its old title and date.
+                        .id(SectionedRowID(section: section.id, assignment: assignment.id))
                     }
                 } header: {
                     SectionHeader(title: section.bucket.title)

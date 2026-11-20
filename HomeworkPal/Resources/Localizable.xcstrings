@@ -226,12 +226,6 @@
     "Edit Class" : {
 
     },
-    "Ends" : {
-
-    },
-    "Every day" : {
-
-    },
     "Give this activity a name." : {
 
     },
@@ -382,9 +376,6 @@
     "Overdue Reminders" : {
 
     },
-    "Pick the days it meets to set a time." : {
-
-    },
     "Plum" : {
 
     },
@@ -407,12 +398,6 @@
     "Reminders are scheduled on your device. Nothing is sent to a server." : {
 
     },
-    "Repeat Until" : {
-
-    },
-    "Repeats On" : {
-
-    },
     "Room, field, or address" : {
 
     },
@@ -420,9 +405,6 @@
 
     },
     "Save" : {
-
-    },
-    "Set the end time later than the start time." : {
 
     },
     "Settings" : {
@@ -448,9 +430,6 @@
 
     },
     "Source Code on GitHub" : {
-
-    },
-    "Starts" : {
 
     },
     "Summary Time" : {
@@ -480,9 +459,6 @@
     "The daily summary lists what's due today. Overdue reminders nudge you each morning about work that isn't checked off." : {
 
     },
-    "The end time needs to be after the start time." : {
-
-    },
     "This permanently deletes your assignments, classes, and settings from this device. This can't be undone." : {
 
     },
@@ -507,9 +483,6 @@
     "Undo Completion" : {
 
     },
-    "Until %@" : {
-
-    },
     "Upcoming" : {
 
     },
@@ -517,12 +490,6 @@
 
     },
     "Violet" : {
-
-    },
-    "Weekdays" : {
-
-    },
-    "Weekends" : {
 
     },
     "You already have a class or activity named \"%@\". Choose a different name." : {

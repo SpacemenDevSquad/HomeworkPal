@@ -53,28 +53,12 @@ struct CourseDetailView: View {
     }
 
     private var hasDetails: Bool {
-        viewModel.course.schedule != nil || viewModel.course.location != nil
+        viewModel.course.location != nil
     }
 
-    /// When and where the class or activity meets.
+    /// Where the class or activity meets.
     private var detailsCard: some View {
         VStack(alignment: .leading, spacing: 8) {
-            if let schedule = viewModel.course.schedule {
-                Label {
-                    VStack(alignment: .leading, spacing: 2) {
-                        Text(schedule.daysDescription())
-                            .font(.body.weight(.medium))
-                        Text(schedule.timeRange(), format: .interval.hour().minute())
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.secondaryText)
-                        Text("Until \(schedule.repeatsUntil, format: .dateTime.month(.wide).day().year())")
-                            .font(.subheadline)
-                            .foregroundStyle(Theme.secondaryText)
-                    }
-                } icon: {
-                    Image(systemName: "clock")
-                }
-            }
             if let location = viewModel.course.location {
                 Label(location, systemImage: "mappin.and.ellipse")
             }

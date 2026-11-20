@@ -17,8 +17,6 @@ nonisolated struct Course: Identifiable, Hashable, Codable, Sendable {
     /// Six-digit RGB hex string, kept as plain data so the model stays `Codable` and UI-framework free.
     var colorHex: String
     var kind: CourseKind
-    /// When it meets, or `nil` if the student didn't pick any repeat days.
-    var schedule: CourseSchedule?
     /// Where it meets, such as a room or field. Optional.
     var location: String?
 
@@ -27,14 +25,12 @@ nonisolated struct Course: Identifiable, Hashable, Codable, Sendable {
         name: String,
         colorHex: String,
         kind: CourseKind = .schoolClass,
-        schedule: CourseSchedule? = nil,
         location: String? = nil
     ) {
         self.id = id
         self.name = name
         self.colorHex = colorHex
         self.kind = kind
-        self.schedule = schedule
         self.location = location
     }
 }
@@ -48,18 +44,7 @@ extension Course {
     static let chemistry = Course(name: "Chemistry", colorHex: "#D98E4F")
     static let biology = Course(name: "Biology", colorHex: "#6FA772")
     static let calculus = Course(name: "Calculus", colorHex: "#C8605A")
-    static let soccer = Course(
-        name: "Soccer",
-        colorHex: "#4A9BA3",
-        kind: .activity,
-        schedule: CourseSchedule(
-            weekdays: [.monday, .wednesday, .friday],
-            startMinutes: 15 * CourseSchedule.minutesPerHour + 30,
-            endMinutes: 17 * CourseSchedule.minutesPerHour,
-            repeatsUntil: Calendar.current.date(byAdding: .month, value: 3, to: .now) ?? .now
-        ),
-        location: "North Field"
-    )
+    static let soccer = Course(name: "Soccer", colorHex: "#4A9BA3", kind: .activity, location: "North Field")
     static let theater = Course(name: "Theater", colorHex: "#8C6BB8", kind: .activity)
 
     static let sampleData: [Course] = [english, chemistry, biology, calculus, soccer, theater]
