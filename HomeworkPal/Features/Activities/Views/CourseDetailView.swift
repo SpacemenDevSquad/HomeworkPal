@@ -86,7 +86,8 @@ struct CourseDetailView: View {
     }
 
     private var assignmentList: some View {
-        LazyVStack(alignment: .leading, spacing: 10, pinnedViews: .sectionHeaders) {
+        // Headers scroll with their rows, matching the Dashboard, so only the navigation bar's blur sits at the top.
+        LazyVStack(alignment: .leading, spacing: 10) {
             assignmentSection(title: "Upcoming", assignments: viewModel.openAssignments)
             assignmentSection(title: "Completed", assignments: viewModel.completedAssignments)
         }
