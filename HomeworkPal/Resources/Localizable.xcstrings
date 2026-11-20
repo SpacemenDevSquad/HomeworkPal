@@ -152,9 +152,6 @@
     "Assignment Not Found" : {
 
     },
-    "At Due Time" : {
-
-    },
     "Blue" : {
 
     },
@@ -179,9 +176,6 @@
 
     },
     "Choose a class or activity for this assignment." : {
-
-    },
-    "Choose one or more reminders for each assignment." : {
 
     },
     "Class" : {
@@ -254,6 +248,9 @@
     "Due %@" : {
 
     },
+    "Each assignment gets one reminder before it's due. The daily summary lists what's due today. Overdue reminders nudge you each morning about work that isn't checked off." : {
+
+    },
     "Edit %@" : {
 
     },
@@ -323,9 +320,6 @@
     "Mark incomplete" : {
 
     },
-    "More" : {
-
-    },
     "Mustard" : {
 
     },
@@ -352,6 +346,9 @@
 
     },
     "No Classes Yet" : {
+
+    },
+    "None" : {
 
     },
     "Not Added" : {
@@ -492,9 +489,6 @@
 
     },
     "That class or activity no longer exists." : {
-
-    },
-    "The daily summary lists what's due today. Overdue reminders nudge you each morning about work that isn't checked off." : {
 
     },
     "This permanently deletes your assignments and classes from iCloud and every device signed in to it, plus this device's settings. This can't be undone." : {

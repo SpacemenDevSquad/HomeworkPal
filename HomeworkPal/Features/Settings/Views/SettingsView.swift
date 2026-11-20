@@ -34,23 +34,6 @@ struct SettingsView: View {
                 await viewModel.refreshNotificationStatus()
                 await viewModel.refreshICloudStatus()
             }
-            .confirmationDialog(
-                "Clear All Data?",
-                isPresented: $viewModel.isConfirmingClearData,
-                titleVisibility: .visible
-            ) {
-                Button("Clear All Data", role: .destructive) {
-                    Task { await viewModel.clearData() }
-                }
-                Button("Cancel", role: .cancel) {}
-            } message: {
-                // With sync on, deletions sync too, so the warning has to say every device is affected.
-                if viewModel.iCloudSyncEnabled {
-                    Text("This permanently deletes your assignments and classes from iCloud and every device signed in to it, plus this device's settings. This can't be undone.")
-                } else {
-                    Text("This permanently deletes your assignments, classes, and settings from this device. This can't be undone.")
-                }
-            }
         }
         .sheet(item: $presentedWebPage) { webPage in
             WebPageSheet(url: webPage.url)
@@ -104,6 +87,24 @@ struct SettingsView: View {
                 Label("Clear All Data", systemImage: "trash")
                     // The form's brown tint would otherwise override the destructive red.
                     .foregroundStyle(Theme.destructive)
+            }
+            // Attached to the button so the dialog's popover points at it, rather than at the whole screen.
+            .confirmationDialog(
+                "Clear All Data?",
+                isPresented: $viewModel.isConfirmingClearData,
+                titleVisibility: .visible
+            ) {
+                Button("Clear All Data", role: .destructive) {
+                    Task { await viewModel.clearData() }
+                }
+                Button("Cancel", role: .cancel) {}
+            } message: {
+                // With sync on, deletions sync too, so the warning has to say every device is affected.
+                if viewModel.iCloudSyncEnabled {
+                    Text("This permanently deletes your assignments and classes from iCloud and every device signed in to it, plus this device's settings. This can't be undone.")
+                } else {
+                    Text("This permanently deletes your assignments, classes, and settings from this device. This can't be undone.")
+                }
             }
         } header: {
             Text("Data")
