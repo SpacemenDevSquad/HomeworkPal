@@ -2,6 +2,8 @@ import SwiftUI
 
 struct SettingsView: View {
     @StateObject private var viewModel: SettingsViewModel
+    /// The About link open in the in-app browser, if any.
+    @State private var presentedWebPage: PresentedWebPage?
 
     init(planner: PlannerViewModel) {
         _viewModel = StateObject(wrappedValue: SettingsViewModel(
@@ -49,6 +51,9 @@ struct SettingsView: View {
                     Text("This permanently deletes your assignments, classes, and settings from this device. This can't be undone.")
                 }
             }
+        }
+        .sheet(item: $presentedWebPage) { webPage in
+            WebPageSheet(url: webPage.url)
         }
         // Attached to the stack, not the root list, so errors also surface while a pushed screen is showing.
         .alert("Something Went Wrong", isPresented: isShowingError) {
@@ -109,9 +114,12 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section {
-            ExternalLinkRow(title: "Privacy Policy", systemImage: "hand.raised", destination: AppLinks.privacyPolicy)
-            ExternalLinkRow(title: "Terms of Service", systemImage: "doc.text", destination: AppLinks.termsOfService)
-            ExternalLinkRow(title: "Source Code on GitHub", systemImage: "chevron.left.forwardslash.chevron.right", destination: AppLinks.sourceCode)
+            WebLinkRow(title: "Privacy Policy", systemImage: "hand.raised") {
+                presentedWebPage = PresentedWebPage(url: AppLinks.privacyPolicy)
+            }
+            WebLinkRow(title: "Source Code on GitHub", systemImage: "chevron.left.forwardslash.chevron.right") {
+                presentedWebPage = PresentedWebPage(url: AppLinks.sourceCode)
+            }
             LabeledContent("Version", value: viewModel.appVersion)
         } header: {
             Text("About")
@@ -133,21 +141,23 @@ struct SettingsView: View {
     }
 }
 
-private struct ExternalLinkRow: View {
+/// A row that opens a web page in an in-app sheet rather than switching to Safari.
+private struct WebLinkRow: View {
     let title: LocalizedStringKey
     let systemImage: String
-    let destination: URL
+    let action: () -> Void
 
     var body: some View {
-        Link(destination: destination) {
+        Button(action: action) {
             HStack {
                 Label(title, systemImage: systemImage)
                 Spacer()
-                Image(systemName: "arrow.up.right")
+                Image(systemName: "chevron.right")
                     .font(.footnote.weight(.semibold))
                     .foregroundStyle(Theme.secondaryText)
                     .accessibilityHidden(true)
             }
+            .contentShape(.rect)
         }
         .foregroundStyle(Theme.primaryText)
     }
