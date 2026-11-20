@@ -26,7 +26,6 @@ struct SectionHeader: View {
             Spacer()
         }
         .padding(.vertical, 8)
-        .background(Theme.background)
     }
 }
 

@@ -64,7 +64,9 @@ struct DashboardView: View {
     }
 
     private var assignmentList: some View {
-        LazyVStack(alignment: .leading, spacing: 10, pinnedViews: .sectionHeaders) {
+        // Headers scroll with their rows rather than pinning: a pinned header's solid band clashed with the
+        // translucent navigation bar above it, leaving two mismatched strips at the top of the screen.
+        LazyVStack(alignment: .leading, spacing: 10) {
             ForEach(viewModel.sections) { section in
                 Section {
                     ForEach(section.assignments) { assignment in

@@ -94,8 +94,7 @@ HomeworkPal is open source, and contributions are welcome. Please open an [issue
 
 ## License
 
-<!-- Choose a license (for example MIT or Apache 2.0), add a LICENSE file, and update this section. -->
-License to be decided.
+HomeworkPal is licensed under the [Apache License, Version 2.0](LICENSE). You're free to use, modify, and distribute it, provided you keep the license and copyright notices and state any significant changes you make.
 
 ---
 
