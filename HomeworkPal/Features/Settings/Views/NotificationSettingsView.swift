@@ -67,14 +67,11 @@ struct NotificationSettingsView: View {
             Toggle(isOn: $viewModel.notificationPreferences.isOverdueReminderEnabled) {
                 Label("Overdue Reminders", systemImage: "exclamationmark.circle")
             }
-            Toggle(isOn: $viewModel.notificationPreferences.playsSound) {
-                Label("Sound", systemImage: "speaker.wave.2")
-            }
         } header: {
             Text("Settings")
                 .foregroundStyle(Theme.primaryText)
         } footer: {
-            Text("Each assignment gets one reminder before it's due. The daily summary lists what's due today. Overdue reminders nudge you each morning about work that isn't checked off.")
+            Text("Each assignment gets one reminder before it's due. The daily summary lists what's due that day. Overdue reminders let you know right after something's due if it isn't checked off.")
                 .foregroundStyle(Theme.secondaryText)
         }
         .toggleStyle(.switch)

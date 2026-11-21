@@ -10,7 +10,6 @@ struct NotificationPreferences: Equatable, Sendable {
     var isDailySummaryEnabled = false
     var dailySummaryMinutesAfterMidnight = Self.defaultDailySummaryMinutesAfterMidnight
     var isOverdueReminderEnabled = true
-    var playsSound = true
 
     init() {}
 
@@ -28,9 +27,6 @@ struct NotificationPreferences: Equatable, Sendable {
         if let storedOverdue = userDefaults.object(forKey: PreferenceKey.overdueRemindersEnabled) as? Bool {
             isOverdueReminderEnabled = storedOverdue
         }
-        if let storedSound = userDefaults.object(forKey: PreferenceKey.notificationSoundEnabled) as? Bool {
-            playsSound = storedSound
-        }
     }
 
     func save(to userDefaults: UserDefaults) {
@@ -39,6 +35,5 @@ struct NotificationPreferences: Equatable, Sendable {
         userDefaults.set(isDailySummaryEnabled, forKey: PreferenceKey.dailySummaryEnabled)
         userDefaults.set(dailySummaryMinutesAfterMidnight, forKey: PreferenceKey.dailySummaryMinutesAfterMidnight)
         userDefaults.set(isOverdueReminderEnabled, forKey: PreferenceKey.overdueRemindersEnabled)
-        userDefaults.set(playsSound, forKey: PreferenceKey.notificationSoundEnabled)
     }
 }
