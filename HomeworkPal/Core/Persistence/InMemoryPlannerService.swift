@@ -5,6 +5,7 @@ import Foundation
 final class InMemoryPlannerService: PlannerPersistenceService {
     private var courses: [Course]
     private var assignments: [Assignment]
+    private var profile: UserProfile?
 
     init(courses: [Course] = [], assignments: [Assignment] = []) {
         self.courses = courses
@@ -63,9 +64,18 @@ final class InMemoryPlannerService: PlannerPersistenceService {
         assignments[index].isAddedToCalendar = true
     }
 
+    func fetchProfile() throws -> UserProfile? {
+        profile
+    }
+
+    func saveProfile(_ profile: UserProfile) throws {
+        self.profile = profile
+    }
+
     func deleteAllData() throws {
         courses.removeAll()
         assignments.removeAll()
+        profile = nil
     }
 }
 #endif

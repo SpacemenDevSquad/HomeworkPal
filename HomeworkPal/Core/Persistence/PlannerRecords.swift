@@ -82,3 +82,22 @@ final class AssignmentRecord {
         )
     }
 }
+
+/// The student's profile. Two devices that each saved one before syncing can briefly leave two records,
+/// so readers take the most recently updated.
+@Model
+final class ProfileRecord {
+    var name = ""
+    /// Kept outside the database file, and synced to iCloud as a file, since photos are large.
+    @Attribute(.externalStorage) var photoData: Data?
+    var updatedAt = Date.now
+
+    init(_ profile: UserProfile) {
+        name = profile.name
+        photoData = profile.photoData
+    }
+
+    var profile: UserProfile {
+        UserProfile(name: name, photoData: photoData)
+    }
+}

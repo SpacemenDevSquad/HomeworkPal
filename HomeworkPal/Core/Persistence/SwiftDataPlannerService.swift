@@ -22,7 +22,7 @@ final class SwiftDataPlannerService: PlannerPersistenceService {
     ///   - syncsWithICloud: Mirrors the store to the student's private iCloud database. Either way it's the
     ///     same on-device store, so turning sync off keeps everything on this device.
     static func makeContainer(isStoredInMemoryOnly: Bool = false, syncsWithICloud: Bool = false) throws -> ModelContainer {
-        let schema = Schema([CourseRecord.self, AssignmentRecord.self])
+        let schema = Schema([CourseRecord.self, AssignmentRecord.self, ProfileRecord.self])
         // Set explicitly in both cases: with the iCloud entitlement present, SwiftData's default would
         // turn sync on automatically and ignore the student's choice.
         let cloudKitDatabase: ModelConfiguration.CloudKitDatabase =
@@ -120,10 +120,25 @@ final class SwiftDataPlannerService: PlannerPersistenceService {
         return try fetch(descriptor).first
     }
 
+    func fetchProfile() throws -> UserProfile? {
+        let descriptor = FetchDescriptor<ProfileRecord>(sortBy: [SortDescriptor(\.updatedAt, order: .reverse)])
+        return try fetch(descriptor).first?.profile
+    }
+
+    /// Writes one fresh record and removes the rest, which also clears any duplicate another device synced in.
+    func saveProfile(_ profile: UserProfile) throws {
+        for record in try fetch(FetchDescriptor<ProfileRecord>()) {
+            context.delete(record)
+        }
+        context.insert(ProfileRecord(profile))
+        try save()
+    }
+
     func deleteAllData() throws {
         do {
             try context.delete(model: AssignmentRecord.self)
             try context.delete(model: CourseRecord.self)
+            try context.delete(model: ProfileRecord.self)
         } catch {
             Logger.persistence.error("Deleting all planner data failed: \(error.localizedDescription, privacy: .private)")
             context.rollback()
