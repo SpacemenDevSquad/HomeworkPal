@@ -2,6 +2,9 @@ import SwiftUI
 
 struct DashboardView: View {
     @StateObject private var viewModel: DashboardViewModel
+    @Environment(NotificationsViewModel.self) private var notifications
+    /// Held so a tapped notification can push its assignment.
+    @State private var path: [AssignmentLink] = []
 
     /// Kept to build each assignment's detail screen.
     private let planner: PlannerViewModel
@@ -12,7 +15,7 @@ struct DashboardView: View {
     }
 
     var body: some View {
-        NavigationStack {
+        NavigationStack(path: $path) {
             ScrollView {
                 if viewModel.isEmpty {
                     emptyState
@@ -49,6 +52,13 @@ struct DashboardView: View {
                 // without this, a swipe would silently discard the student's edits.
                 .interactiveDismissDisabled()
             }
+        }
+        // `initial` covers a tap that launched the app, which arrives before this view first appears.
+        .onChange(of: notifications.assignmentToOpen, initial: true) { _, assignmentID in
+            guard let assignmentID else { return }
+            // Replaces whatever was open, so the tapped assignment is the only screen on top of the list.
+            path = [AssignmentLink(id: assignmentID)]
+            notifications.assignmentToOpen = nil
         }
     }
 
@@ -92,10 +102,14 @@ struct DashboardView: View {
 
 #if DEBUG
 #Preview {
-    DashboardView(planner: PlannerViewModel())
+    let planner = PlannerViewModel()
+    DashboardView(planner: planner)
+        .environment(NotificationsViewModel.preview(planner: planner))
 }
 
 #Preview("Empty") {
-    DashboardView(planner: PlannerViewModel(assignments: []))
+    let planner = PlannerViewModel(assignments: [])
+    DashboardView(planner: planner)
+        .environment(NotificationsViewModel.preview(planner: planner))
 }
 #endif

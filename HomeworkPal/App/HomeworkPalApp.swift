@@ -1,6 +1,7 @@
 import CoreData
 import SwiftUI
 import UIKit
+import UserNotifications
 
 @main
 struct HomeworkPalApp: App {
@@ -8,6 +9,8 @@ struct HomeworkPalApp: App {
     @State private var planner: PlannerViewModel
     /// When the planner last synced with iCloud, shown in Settings.
     @State private var syncStatus: CloudSyncStatusViewModel
+    /// Schedules reminders and opens the assignment behind a tapped notification.
+    @State private var notifications: NotificationsViewModel
     @Environment(\.scenePhase) private var scenePhase
 
     init() {
@@ -18,6 +21,10 @@ struct HomeworkPalApp: App {
         )
         _planner = State(initialValue: planner)
         _syncStatus = State(initialValue: CloudSyncStatusViewModel(cloudSync: CloudSyncService(planner: planner)))
+        let notifications = NotificationsViewModel(planner: planner)
+        _notifications = State(initialValue: notifications)
+        // Set during launch so the tap that opened the app is delivered. The center holds it weakly; the state keeps it alive.
+        UNUserNotificationCenter.current().delegate = notifications
 
         // SwiftUI has no API for navigation title color, so the palette is applied through UIKit's appearance proxy.
         let titleColor = UIColor(Theme.primaryText)
@@ -30,9 +37,16 @@ struct HomeworkPalApp: App {
             RootTabView()
                 .environment(planner)
                 .environment(syncStatus)
+                .environment(notifications)
                 .tint(Theme.primaryText)
                 .task {
                     planner.refreshFromStore()
+                }
+                .task {
+                    await notifications.monitorPlannerChanges()
+                }
+                .task {
+                    await notifications.monitorPreferenceChanges()
                 }
                 .task {
                     await syncStatus.monitorSyncEvents()
@@ -44,10 +58,12 @@ struct HomeworkPalApp: App {
                         planner.refreshFromStore()
                     }
                 }
-                // Coming back to the app also catches up, in case changes arrived while it was suspended.
+                // Coming back to the app also catches up, in case changes arrived while it was suspended, and
+                // rebuilds the notifications so the daily summaries stay written ahead and the badge is current.
                 .onChange(of: scenePhase) { _, newPhase in
                     if newPhase == .active {
                         planner.refreshFromStore()
+                        Task { await notifications.reschedule() }
                     }
                 }
         }

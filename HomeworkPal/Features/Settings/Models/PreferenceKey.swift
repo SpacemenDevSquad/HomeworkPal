@@ -7,7 +7,6 @@ enum PreferenceKey {
     static let dailySummaryEnabled = "dailySummaryEnabled"
     static let dailySummaryMinutesAfterMidnight = "dailySummaryMinutesAfterMidnight"
     static let overdueRemindersEnabled = "overdueRemindersEnabled"
-    static let notificationSoundEnabled = "notificationSoundEnabled"
     static let iCloudSyncEnabled = "iCloudSyncEnabled"
     /// When this device last finished syncing with iCloud successfully.
     static let lastICloudSyncDate = "lastICloudSyncDate"
@@ -19,7 +18,6 @@ enum PreferenceKey {
         dailySummaryEnabled,
         dailySummaryMinutesAfterMidnight,
         overdueRemindersEnabled,
-        notificationSoundEnabled,
         iCloudSyncEnabled,
         lastICloudSyncDate
     ]
