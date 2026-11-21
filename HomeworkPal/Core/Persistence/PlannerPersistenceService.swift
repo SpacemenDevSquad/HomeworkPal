@@ -21,7 +21,11 @@ protocol PlannerPersistenceService {
     func setCompletion(_ isCompleted: Bool, forAssignmentID assignmentID: Assignment.ID) throws
     /// Records that the assignment's due date was saved to Apple Calendar.
     func markAddedToCalendar(assignmentID: Assignment.ID) throws
-    /// Deletes every course and assignment.
+    /// The saved profile, or `nil` if the student hasn't set one up.
+    func fetchProfile() throws -> UserProfile?
+    /// Replaces the saved profile.
+    func saveProfile(_ profile: UserProfile) throws
+    /// Deletes every course and assignment, and the profile.
     func deleteAllData() throws
 }
 

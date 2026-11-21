@@ -12,7 +12,7 @@ This policy explains, in plain language, what HomeworkPal stores, where it is st
 
 - **No account.** You never sign up, sign in, or give us your name or email address.
 - **No ads, no analytics, no tracking.** HomeworkPal contains no advertising, analytics, or tracking tools, and it never sells or shares your information.
-- **Your data stays with you.** Your classes, activities, and assignments are stored on your device. If you turn on iCloud Sync, they're also stored in *your own* private iCloud account, which we can't access.
+- **Your data stays with you.** Your classes, activities, assignments, and optional profile are stored on your device. If you turn on iCloud Sync, they're also stored in *your own* private iCloud account, which we can't access.
 - **We have no servers.** HomeworkPal doesn't send your data to us or to anyone else.
 
 ---
@@ -23,9 +23,10 @@ HomeworkPal stores only what you type into it:
 
 - **Classes and activities:** name, color, type (class or activity), and an optional location.
 - **Assignments:** title, due date and time, notes, which class or activity it belongs to, whether it's completed, and whether you've added it to Apple Calendar.
+- **Profile (optional):** a name and a profile photo, if you choose to add them under **Settings → Edit Profile**. Both are shown only to you, in Settings.
 - **Settings:** your preferences, such as notification choices, whether iCloud Sync is on, and when your data last synced.
 
-HomeworkPal does **not** collect your name, email address, phone number, location, contacts, photos, device identifiers, or usage statistics.
+Apart from the optional profile name and photo, which stay on your device (and in your iCloud, if you use iCloud Sync), HomeworkPal does **not** collect your name, email address, phone number, location, contacts, photos, device identifiers, or usage statistics.
 
 ## Where your data is stored
 
@@ -35,7 +36,7 @@ Everything you enter is saved on your iPhone or iPad. It's protected by your dev
 
 ### In your private iCloud (optional)
 
-If you turn on **Settings → iCloud Sync**, HomeworkPal keeps your classes, activities, and assignments in sync across devices signed in to the same Apple Account. This uses Apple's iCloud **private database**, which belongs to your Apple Account:
+If you turn on **Settings → iCloud Sync**, HomeworkPal keeps your classes, activities, assignments, and profile in sync across devices signed in to the same Apple Account. This uses Apple's iCloud **private database**, which belongs to your Apple Account:
 
 - The data is stored by Apple, in your iCloud storage, under [Apple's Privacy Policy](https://www.apple.com/legal/privacy/).
 - The HomeworkPal developers **cannot see, read, or access** anything in your private iCloud database.
@@ -47,6 +48,14 @@ When you choose **Add to Calendar**, HomeworkPal opens Apple's standard "Add Eve
 
 - HomeworkPal **never asks for permission to access your calendar** and **cannot see** any of your existing events.
 - An event is only created if you tap **Add** on Apple's screen. Once saved, it belongs to your calendar and is managed by Apple's Calendar app.
+
+## Camera and photos
+
+When you edit your profile, you can take a photo with the front camera or choose one from your library.
+
+- HomeworkPal asks for camera permission only when you tap **Take Photo**, and uses the camera only while you're taking that photo.
+- Choosing from your library uses Apple's photo picker, which shows HomeworkPal **only the one photo you pick**. HomeworkPal never asks for access to your photo library.
+- Only the cropped profile photo is saved. The original isn't kept, and nothing is added to your photo library.
 
 ## Notifications
 
@@ -63,7 +72,7 @@ HomeworkPal is designed for students, including students under 13. Because Homew
 ## Your choices and control
 
 - **See your data:** everything HomeworkPal stores is visible in the app.
-- **Delete your data:** go to **Settings → Clear All Data**. If iCloud Sync is on, this also deletes your planner data from iCloud and every device signed in to it. Deleting the app also removes the data stored on that device.
+- **Delete your data:** go to **Settings → Clear All Data**, which also removes your profile name and photo. If iCloud Sync is on, this also deletes your planner data from iCloud and every device signed in to it. Deleting the app also removes the data stored on that device.
 - **Stop syncing:** turn off **Settings → iCloud Sync**.
 - **Remove iCloud data:** you can also manage or delete HomeworkPal's iCloud data in the iOS Settings app under **[Your Name] → iCloud → Manage Storage**.
 

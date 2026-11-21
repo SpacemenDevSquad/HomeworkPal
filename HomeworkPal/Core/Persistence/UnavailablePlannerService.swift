@@ -39,6 +39,14 @@ struct UnavailablePlannerService: PlannerPersistenceService {
         throw PlannerPersistenceError.storeUnavailable
     }
 
+    func fetchProfile() throws -> UserProfile? {
+        throw PlannerPersistenceError.storeUnavailable
+    }
+
+    func saveProfile(_ profile: UserProfile) throws {
+        throw PlannerPersistenceError.storeUnavailable
+    }
+
     func deleteAllData() throws {
         throw PlannerPersistenceError.storeUnavailable
     }

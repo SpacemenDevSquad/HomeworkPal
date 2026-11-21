@@ -4,8 +4,13 @@ struct SettingsView: View {
     @StateObject private var viewModel: SettingsViewModel
     /// The About link open in the in-app browser, if any.
     @State private var presentedWebPage: PresentedWebPage?
+    @State private var isEditingProfile = false
+
+    /// Read directly for the profile, and passed to the profile editor.
+    private let planner: PlannerViewModel
 
     init(planner: PlannerViewModel) {
+        self.planner = planner
         _viewModel = StateObject(wrappedValue: SettingsViewModel(
             userDataService: UserDataService(planner: planner),
             cloudSyncService: CloudSyncService(planner: planner)
@@ -15,6 +20,7 @@ struct SettingsView: View {
     var body: some View {
         NavigationStack {
             Form {
+                profileSection
                 preferencesSection
                 dataSection
                 aboutSection
@@ -38,6 +44,9 @@ struct SettingsView: View {
         .sheet(item: $presentedWebPage) { webPage in
             WebPageSheet(url: webPage.url)
         }
+        .sheet(isPresented: $isEditingProfile) {
+            EditProfileView(planner: planner)
+        }
         // Attached to the stack, not the root list, so errors also surface while a pushed screen is showing.
         .alert("Something Went Wrong", isPresented: isShowingError) {
             Button("OK", role: .cancel) {}
@@ -46,16 +55,33 @@ struct SettingsView: View {
         }
     }
 
+    /// Sits straight on the background, with no row card behind it.
+    private var profileSection: some View {
+        Section {
+            ProfileHeader(name: planner.profile.name, photoData: planner.profile.photoData)
+                .listRowBackground(Color.clear)
+                .listRowInsets(EdgeInsets())
+        }
+    }
+
     private var preferencesSection: some View {
         Section {
+            DisclosureButtonRow(title: "Edit Profile", systemImage: "person.crop.circle") {
+                isEditingProfile = true
+            }
             NavigationLink(value: SettingsDestination.notifications) {
                 LabeledContent {
-                    Text(viewModel.notificationsEnabled ? "On" : "Off")
-                        .foregroundStyle(Theme.secondaryText)
+                    HStack {
+                        Text(viewModel.notificationsEnabled ? "On" : "Off")
+                            .foregroundStyle(Theme.secondaryText)
+                        DisclosureChevron()
+                    }
                 } label: {
                     Label("Notifications", systemImage: "bell")
                 }
             }
+            // Swapped for the app's own arrow, so it matches the Edit Profile row above it exactly.
+            .navigationLinkIndicatorVisibility(.hidden)
             Toggle(isOn: $viewModel.iCloudSyncEnabled) {
                 Label("iCloud Sync", systemImage: "icloud")
             }
@@ -74,7 +100,7 @@ struct SettingsView: View {
                     Label("Sign in to iCloud in the Settings app to start syncing.", systemImage: "exclamationmark.icloud")
                         .foregroundStyle(Theme.primaryText)
                 }
-                Text("iCloud Sync keeps your classes and assignments up to date on every device signed in to your Apple Account, using your own private iCloud storage, never our servers.")
+                Text("iCloud Sync keeps your classes, assignments, and profile up to date on every device signed in to your Apple Account, using your own private iCloud storage, never our servers.")
                     .foregroundStyle(Theme.secondaryText)
             }
         }
@@ -115,10 +141,10 @@ struct SettingsView: View {
 
     private var aboutSection: some View {
         Section {
-            WebLinkRow(title: "Privacy Policy", systemImage: "hand.raised") {
+            DisclosureButtonRow(title: "Privacy Policy", systemImage: "hand.raised") {
                 presentedWebPage = PresentedWebPage(url: AppLinks.privacyPolicy)
             }
-            WebLinkRow(title: "Source Code on GitHub", systemImage: "chevron.left.forwardslash.chevron.right") {
+            DisclosureButtonRow(title: "Source Code on GitHub", systemImage: "chevron.left.forwardslash.chevron.right") {
                 presentedWebPage = PresentedWebPage(url: AppLinks.sourceCode)
             }
             LabeledContent("Version", value: viewModel.appVersion)
@@ -142,8 +168,19 @@ struct SettingsView: View {
     }
 }
 
-/// A row that opens a web page in an in-app sheet rather than switching to Safari.
-private struct WebLinkRow: View {
+/// The trailing arrow on every Settings row that opens another screen. Drawn by the app rather than the system,
+/// so the rows that open sheets and the row that pushes a screen all look identical.
+private struct DisclosureChevron: View {
+    var body: some View {
+        Image(systemName: "chevron.right")
+            .font(.footnote.weight(.semibold))
+            .foregroundStyle(Color(uiColor: .tertiaryLabel))
+            .accessibilityHidden(true)
+    }
+}
+
+/// A button row with a trailing chevron, matching the look of a navigation link, for rows that open a sheet.
+private struct DisclosureButtonRow: View {
     let title: LocalizedStringKey
     let systemImage: String
     let action: () -> Void
@@ -153,10 +190,7 @@ private struct WebLinkRow: View {
             HStack {
                 Label(title, systemImage: systemImage)
                 Spacer()
-                Image(systemName: "chevron.right")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundStyle(Theme.secondaryText)
-                    .accessibilityHidden(true)
+                DisclosureChevron()
             }
             .contentShape(.rect)
         }

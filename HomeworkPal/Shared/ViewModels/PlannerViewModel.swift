@@ -13,6 +13,8 @@ import OSLog
 final class PlannerViewModel {
     private(set) var courses: [Course] = []
     private(set) var assignments: [Assignment] = []
+    /// The student's name and photo. Empty until they set them.
+    private(set) var profile = UserProfile()
     /// A user-facing description of the last failed load or save, shown in an alert.
     private(set) var errorMessage: String?
 
@@ -28,6 +30,14 @@ final class PlannerViewModel {
             let snapshot = try persistence.fetchPlanner()
             courses = snapshot.courses
             assignments = snapshot.assignments
+            profile = try persistence.fetchProfile() ?? UserProfile()
+        }
+    }
+
+    func updateProfile(_ profile: UserProfile) {
+        perform {
+            try persistence.saveProfile(profile)
+            self.profile = profile
         }
     }
 
@@ -164,12 +174,13 @@ final class PlannerViewModel {
         }
     }
 
-    /// Erases every class, activity, and assignment. Throws rather than using the shared error alert, so the
+    /// Erases every class, activity, and assignment, and the profile. Throws rather than using the shared error alert, so the
     /// caller (Settings' Clear Data) can report the failure in its own UI.
     func deleteAllData() throws {
         try persistence.deleteAllData()
         courses = []
         assignments = []
+        profile = UserProfile()
     }
 
     /// Drives the error alert; setting it to `false` dismisses the current error.

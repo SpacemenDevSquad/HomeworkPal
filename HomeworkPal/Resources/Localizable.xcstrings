@@ -198,6 +198,9 @@
     "Choose a class or activity for this assignment." : {
 
     },
+    "Choose from Library" : {
+
+    },
     "Class" : {
 
     },
@@ -225,6 +228,9 @@
     "Couldn't sync" : {
 
     },
+    "Crop Photo" : {
+
+    },
     "Daily Summary" : {
 
     },
@@ -236,6 +242,9 @@
 
     },
     "Date" : {
+
+    },
+    "Default User" : {
 
     },
     "Delete" : {
@@ -262,6 +271,9 @@
     "Done" : {
 
     },
+    "Drag to move and pinch to zoom." : {
+
+    },
     "Due" : {
 
     },
@@ -284,6 +296,9 @@
 
     },
     "Edit Class" : {
+
+    },
+    "Edit Profile" : {
 
     },
     "Give this activity a name." : {
@@ -310,7 +325,7 @@
     "iCloud Sync" : {
 
     },
-    "iCloud Sync keeps your classes and assignments up to date on every device signed in to your Apple Account, using your own private iCloud storage, never our servers." : {
+    "iCloud Sync keeps your classes, assignments, and profile up to date on every device signed in to your Apple Account, using your own private iCloud storage, never our servers." : {
 
     },
     "Indigo" : {
@@ -323,6 +338,9 @@
 
     },
     "Later" : {
+
+    },
+    "Leave it blank to stay Default User." : {
 
     },
     "Lime" : {
@@ -369,6 +387,9 @@
 
     },
     "No Classes Yet" : {
+
+    },
+    "No Thanks" : {
 
     },
     "None" : {
@@ -438,6 +459,9 @@
     "Overdue: %@" : {
 
     },
+    "Photo preview" : {
+
+    },
     "Plum" : {
 
     },
@@ -496,6 +520,9 @@
     "Synced %@" : {
 
     },
+    "Take Photo" : {
+
+    },
     "Tap + to add a class." : {
 
     },
@@ -512,6 +539,12 @@
 
     },
     "That class or activity no longer exists." : {
+
+    },
+    "That photo couldn't be opened. Please choose another." : {
+
+    },
+    "The photo couldn't be cropped. Please try again." : {
 
     },
     "This permanently deletes your assignments and classes from iCloud and every device signed in to it, plus this device's settings. This can't be undone." : {
@@ -544,13 +577,25 @@
     "Upcoming" : {
 
     },
+    "Use Photo" : {
+
+    },
     "Version" : {
 
     },
     "Violet" : {
 
     },
+    "What should we call you?" : {
+
+    },
+    "Would you like a new photo?" : {
+
+    },
     "You already have a class or activity named \"%@\". Choose a different name." : {
+
+    },
+    "Your Name" : {
 
     },
     "Your planner couldn't be loaded. Please try again." : {
